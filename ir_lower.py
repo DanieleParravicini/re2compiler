@@ -106,7 +106,6 @@ class Match(IrInstr):
 		else:
 			self.char = achar
 		
-	
 	def dotty_repr(self):
 		return f"{id(self)} [label =\"{chr(self.char)}\" color=\"black\" fillcolor=\"#ffa822\" style=\"filled\"]\n"
 

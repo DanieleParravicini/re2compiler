@@ -32,7 +32,7 @@ def simplify_jumps(start_node):
 			for i in range(len(node.children)):
 				if ( isinstance(node.children[i] , ir_lower.Jmp) and 
 				     isinstance(node.children[i].children[0] , ir_lower.Jmp) ):
-					node.replace(node.children[i], node.children[i].children[0])
+					node.replace(node.children[i], ir_lower.Jmp(node.children[i].children[0].children[0]))
 					something_changed = True
 		if (isinstance(start_node , ir_lower.Jmp) and 
 		    isinstance(start_node.children[0] , ir_lower.Jmp)):

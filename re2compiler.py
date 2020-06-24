@@ -79,6 +79,7 @@ def compile(inputfile=None,data=None, o=None, dotast=None, dotirlowered=None, do
 	if inputfile :
 		with open(inputfile,'r') as f:
 			data= f.read()
+			print('read', data)
 	elif data is None:
 		data 	= input('enter the regular expression> ')  
 
@@ -93,7 +94,8 @@ def compile(inputfile=None,data=None, o=None, dotast=None, dotirlowered=None, do
 	if O1:
 		lowered_ir = optimization.simplify_jumps(lowered_ir)
 		lowered_ir = optimization.enhance_splits(lowered_ir)
-		infinite_loops_check_passed = optimization.check_infinite_loops(lowered_ir)
+	
+	_ = optimization.check_infinite_loops(lowered_ir)
 
 
 	if(dotirlowered is not None):
@@ -123,13 +125,13 @@ if __name__ == "__main__":
 	import argparse
 
 	arg_parser = argparse.ArgumentParser(description='compile a regular expression into code that can be executed by re2coprocessor(https://github.com/DanieleParravicini/regex_coprocessor).')
-	arg_parser.add_argument('inputfile'		    , type=str, help='input file containing the regular expression.'								, default=None, nargs='?')
-	arg_parser.add_argument('--data'		    , type=str, help='output file containing the code that represent the regular expression.'		, default=None, nargs='?')
-	arg_parser.add_argument('--o'			    , type=str, help='output file containing the code that represent the regular expression.'		, default=None, nargs='?')
-	arg_parser.add_argument('--dotast'			, type=str, help='save abstract syntax tree representation using dot format in the given file.'	, default=None)
-	arg_parser.add_argument('--dotirlowered'	, type=str, help='save ir representation using dot format in the given file.'					, default=None)
-	arg_parser.add_argument('--dotcode'			, type=str, help='save a code representatio using dot format in the given file.'				, default=None)
-	arg_parser.add_argument('--O1'			    , 			help='perform simple optimization'													, default=False, action='store_true')
+	arg_parser.add_argument('inputfile'		    , type=str, help='input file containing the regular expression.'													, default=None, nargs='?')
+	arg_parser.add_argument('-data'		    , type=str, help='allows to pass the input string representing the regular expression directly via parameter .'		, default=None, nargs='?')
+	arg_parser.add_argument('-dotast'			, type=str, help='save abstract syntax tree representation using dot format in the given file.'						, default=None)
+	arg_parser.add_argument('-dotirlowered'	, type=str, help='save ir representation using dot format in the given file.'										, default=None)
+	arg_parser.add_argument('-dotcode'			, type=str, help='save a code representatio using dot format in the given file.'									, default=None)
+	arg_parser.add_argument('-o'			    , type=str, help='output file containing the code that represent the regular expression.'							, default='a.out', nargs='?')
+	arg_parser.add_argument('-O1'			    , 			help='perform simple optimization'																		, default=False, action='store_true')
 	
 	args = arg_parser.parse_args()
 	
