@@ -14,7 +14,13 @@ Very simple!
   2. using a file
   3. using the `-data` argument
   4. programmatically by recalling compile from another python script as in example.py
+  ```
+  import re2compiler
 
+  data 	= '(a|b)*'
+  output	= re2compiler.compile(data=data)
+  print(output)
+  ```
   ![screen shot example](https://github.com/DanieleParravicini/re2compiler/blob/master/wiki/howto.PNG)
   
 # Optional arguments:
