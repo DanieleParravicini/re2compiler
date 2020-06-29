@@ -1,6 +1,10 @@
 import ir_lower
 import ir_re2coprocessor
 import itertools
+import pprint
+
+def pretty_printer(dictionary):
+	pprint.PrettyPrinter(indent=4).pprint(dictionary)
 
 def eliminate_nops(start_node):
 	#eliminate nop used during construction
@@ -51,13 +55,12 @@ def reverse(dictionary):
 			revdict.setdefault(v, []).append(k)
 	return revdict
 
-def enhance_splits(start_node):
+def enhance_splits(start_node, debug=False):
 	# enhance splits
-	split_to_connected_split = {}
 	
 	#collect split
 	nodes = start_node.getNodes()
-	split_nodes = filter(lambda x: isinstance(x, ir_lower.Split), nodes)
+	split_nodes = list(filter(lambda x: isinstance(x, ir_lower.Split), nodes))
 	
 	children = {}
 	for n in nodes:
@@ -65,19 +68,38 @@ def enhance_splits(start_node):
 			children[n] = n.children
 
 	father = reverse(children)
+	if debug:
+		print('fathers')
+		pretty_printer(father)
 	double_fathers = []
 	for child in father:
 		if len(father[child]) > 2:
 			double_fathers.append(child)
 
-	#collect splits and directly connected fixed point.
+	#collect each split and its directly connected split for further processing.
+	#This is a first step of an iterative substitution of children with their fathers 
+	# NOTE: only split with two or one incoming arrows stop the recursive substition.
+	# D   E
+	#  \ /
+	#	A
+	#  / \	
+	# B   C 
+	# expected result.
+	# A -> A
+	# B -> A
+	# C -> A
+	# D -> D
+	# E -> E
+	split_anchestor = {}
 	for node in split_nodes:
-		if not( node in split_to_connected_split ):
-			split_to_connected_split[node] = node
-	
+		#if that node has not already been considered add itself as its topmost split
+		if not( node in split_anchestor ):
+			split_anchestor[node] = node
+		#then consider all its child and set <node> as their split_anchestor
 		directly_connected_splits = filter(lambda x: isinstance(x,ir_lower.Split) and not(x in double_fathers) , node.children)
 		for connected_split in directly_connected_splits :
-			split_to_connected_split[connected_split] = split_to_connected_split[node]
+			split_anchestor[connected_split] = split_anchestor[node]
+	
 	#iterative substitution till fixed point.
 	something_changed = True
 	while something_changed :
@@ -85,22 +107,30 @@ def enhance_splits(start_node):
 		for node in split_nodes:
 			directly_connected_splits = filter(lambda x: isinstance(x,ir_lower.Split) and not(x in double_fathers), node.children)
 			for connected_split in directly_connected_splits :
-				if not( split_to_connected_split[connected_split] == split_to_connected_split[node]):
+				if not( split_anchestor[connected_split] == split_anchestor[node]):
 					something_changed = True
-					split_to_connected_split[connected_split] = split_to_connected_split[node]
-	#invert mapping split->split_group to split_group -> split
-	split_group_to_splits = reverse(split_to_connected_split)
-	#print(split_group_to_splits)
+					split_anchestor[connected_split] = split_anchestor[node]
+	# In the end we have a map from each split to its 'group'
+	# invert mapping split->split_group to split_group -> split
+	split_group_to_splits = reverse(split_anchestor)
+	if debug:
+		print('split->group') 
+		pretty_printer(split_anchestor)
+		print('group->split')
+		pretty_printer(split_group_to_splits)
+	#now we can manipulate the code so that splits are all parallel
 
-	for split_group in split_group_to_splits:
-		if len(split_group_to_splits[split_group]) == 1:
+	for split_anchestor in split_group_to_splits:
+		#ignore unoptimizable splits
+		if len(split_group_to_splits[split_anchestor]) == 1:
 			continue
-
-		splits = split_group_to_splits[split_group]
+		#take all splits related to that group
+		splits = split_group_to_splits[split_anchestor]
+		#take all their children ignoring splits which belong to the group
 		all_children = list(itertools.chain(*[ s.children for s in splits]))
-		all_children = list(filter(lambda x: not isinstance(x,ir_lower.Split) ,all_children))
+		all_children = list(filter(lambda x: x not in splits, all_children))
 		#print(all_children)
-
+		#organize all children in a well shaped tree
 		while len(all_children)>=2:
 			#print(len(all_children))
 			option0 = all_children.pop(0)
@@ -108,14 +138,15 @@ def enhance_splits(start_node):
 			split   = ir_lower.Split(option0, option1)
 
 			all_children.append(split)
+		#tree root is new_split_anchestor
+		new_split_anchestor = all_children[0]
 
-		new_split_group = all_children[0]
+		if(split_anchestor == start_node):
+			start_node = new_split_anchestor
 
-		if(split_group == start_node):
-			start_node = new_split_group
-		
-		for f in father[split_group]:
-			f.replace(split_group,new_split_group )
+		if split_anchestor in father:
+			for f in father[split_anchestor]:
+				f.replace(split_anchestor,new_split_anchestor )
 
 	return start_node
 
