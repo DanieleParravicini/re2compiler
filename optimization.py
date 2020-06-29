@@ -35,11 +35,11 @@ def simplify_jumps(start_node):
 		for node in nodes:
 			for i in range(len(node.children)):
 				if ( isinstance(node.children[i] , ir_lower.Jmp) and 
-				     isinstance(node.children[i].children[0] , ir_lower.Jmp) ):
+					 isinstance(node.children[i].children[0] , ir_lower.Jmp) ):
 					node.replace(node.children[i], ir_lower.Jmp(node.children[i].children[0].children[0]))
 					something_changed = True
 		if (isinstance(start_node , ir_lower.Jmp) and 
-		    isinstance(start_node.children[0] , ir_lower.Jmp)):
+			isinstance(start_node.children[0] , ir_lower.Jmp)):
 		   start_node = start_node.children[0]
 		   something_changed = True
 	
@@ -67,6 +67,7 @@ def enhance_splits(start_node, debug=False):
 		if len(n.children)>0:
 			children[n] = n.children
 
+	#print('childrens', pretty(children))
 	father = reverse(children)
 	if debug:
 		print('fathers')
