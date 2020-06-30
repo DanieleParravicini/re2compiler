@@ -67,16 +67,20 @@ def enhance_splits(start_node, debug=False):
 		if len(n.children)>0:
 			children[n] = n.children
 
-	#print('childrens', pretty(children))
+	
 	father = reverse(children)
-	if debug:
-		print('fathers')
-		pretty_printer(father)
+	
 	double_fathers = []
 	for child in father:
-		if len(father[child]) > 2:
+		if len(father[child]) >= 2:
 			double_fathers.append(child)
-
+	if debug:
+		print('childrens')
+		pretty_printer(children)
+		print('fathers')
+		pretty_printer(father)
+		print('double fathers')
+		pretty_printer(double_fathers)
 	#collect each split and its directly connected split for further processing.
 	#This is a first step of an iterative substitution of children with their fathers 
 	# NOTE: only split with two or one incoming arrows stop the recursive substition.
