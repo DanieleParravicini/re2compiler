@@ -6,6 +6,7 @@ class Instr_type(Enum):
 	JMP	   			      = 3
 	END_WITHOUT_ACCEPTING = 4
 	MATCH_ANY 		      = 5
+	ACCEPT_PARTIAL	      = 6
 
 class Instr:
 	def __init__(self, pc, instr_type, data):
@@ -32,6 +33,13 @@ class Instr:
 class Accept(Instr):
 	def __init__(self, pc):
 		super().__init__(pc, Instr_type.ACCEPT, 0)
+
+	def dotty_str(self):
+		return f"{self.pc} [label=\"{self.pc} : \\\\00 => ✓\" color=\"black\"  fillcolor=\"#1ac0c6\"	style=\"filled\"]\n"
+
+class Accept_Partial(Instr):
+	def __init__(self, pc):
+		super().__init__(pc, Instr_type.ACCEPT_PARTIAL, 0)
 
 	def dotty_str(self):
 		return f"{self.pc} [label=\"{self.pc} : ✓\" color=\"black\"  fillcolor=\"#1ac0c6\"	style=\"filled\"]\n"

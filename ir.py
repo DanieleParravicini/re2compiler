@@ -173,8 +173,12 @@ class any_character(ir_node):
 
 
 class whole_regexp(ir_node):
-	def __init__(self, regex):
+	def __init__(self, regex, accept_partial=True):
+		self.accept_partial = accept_partial
 		super().__init__(regex)
+
+	def set_accept_partial(self, accept_partial=True):
+		self.accept_partial = accept_partial
 
 	def dotty_str(self):
 		tmp = [ (c.dotty_str() if hasattr(c, 'dotty_str') else str(c))+'\n' for c in self.children]
@@ -183,8 +187,8 @@ class whole_regexp(ir_node):
 	
 	def lower(self):
 		
-			
-		end = ir_lower.Accept()
+		
+		end = ir_lower.Accept_Partial() if self.accept_partial else ir_lower.Accept()
 		lowered_children = super().lower()
 		assert len(lowered_children) == 1
 		child = lowered_children[0]

@@ -98,16 +98,20 @@ def save_dotty(fout):
 
 	return save_dotty_action
 
-def compile(inputfile=None,data=None, o=None, dotast=None, dotirlowered=None, dotcode=None, O1=None):
-
+def compile(inputfile=None,data=None, o=None, dotast=None, dotirlowered=None, dotcode=None, O1=None, full_match=False):
+	
 	if inputfile :
 		with open(inputfile,'r') as f:
 			data= f.read()
 			print('read', data)
 	elif data is None:
 		data 	= input('enter the regular expression> ')  
-
+	
 	ast 		= frontend.parse(data)
+
+	if(full_match): #by default regex_code accept even partial match
+		ast.set_accept_partial(False)
+
 	if(dotast is not None):
 		dot_file_content 	= ast.dotty_str()
 		with open(dotast, 'w', encoding="utf-8") as f:
@@ -150,9 +154,10 @@ if __name__ == "__main__":
 
 	arg_parser = argparse.ArgumentParser(description='compile a regular expression into code that can be executed by re2coprocessor(https://github.com/DanieleParravicini/regex_coprocessor).')
 	arg_parser.add_argument('inputfile'		    , type=str, help='input file containing the regular expression.'													, default=None, nargs='?')
-	arg_parser.add_argument('-data'		    , type=str, help='allows to pass the input string representing the regular expression directly via parameter .'		, default=None, nargs='?')
+	arg_parser.add_argument('-full_match'	    , 			help='requires that regular expression matches the entire string'										, default=False, action='store_true')
+	arg_parser.add_argument('-data'		    	, type=str, help='allows to pass the input string representing the regular expression directly via parameter .'		, default=None, nargs='?')
 	arg_parser.add_argument('-dotast'			, type=str, help='save abstract syntax tree representation using dot format in the given file.'						, default=None)
-	arg_parser.add_argument('-dotirlowered'	, type=str, help='save ir representation using dot format in the given file.'										, default=None)
+	arg_parser.add_argument('-dotirlowered'		, type=str, help='save ir representation using dot format in the given file.'										, default=None)
 	arg_parser.add_argument('-dotcode'			, type=str, help='save a code representatio using dot format in the given file.'									, default=None)
 	arg_parser.add_argument('-o'			    , type=str, help='output file containing the code that represent the regular expression.'							, default='a.out', nargs='?')
 	arg_parser.add_argument('-O1'			    , 			help='perform simple optimization'																		, default=False, action='store_true')

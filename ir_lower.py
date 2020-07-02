@@ -74,10 +74,21 @@ class Accept(IrInstr):
 		super().__init__()
 
 	def dotty_repr(self):
-		return f"{id(self)} [label=\"✓\" color=\"black\"  fillcolor=\"#1ac0c6\"	style=\"filled\"]\n"
+		return f"{id(self)} [label=\"\\\\00 => ✓\" color=\"black\"  fillcolor=\"#1ac0c6\"	style=\"filled\"]\n"
 
 	def _code_gen(self, pc, list_ir_instructions: list,  list_instructions: list):
 		anInstr = ir_re2coprocessor.Accept(pc)
+		list_instructions[pc] = anInstr
+
+class Accept_Partial(IrInstr):
+	def __init__(self):
+		super().__init__()
+
+	def dotty_repr(self):
+		return f"{id(self)} [label=\"✓\" color=\"black\"  fillcolor=\"#1ac0c6\"	style=\"filled\"]\n"
+
+	def _code_gen(self, pc, list_ir_instructions: list,  list_instructions: list):
+		anInstr = ir_re2coprocessor.Accept_Partial(pc)
 		list_instructions[pc] = anInstr
 
 class Split(IrInstr):
