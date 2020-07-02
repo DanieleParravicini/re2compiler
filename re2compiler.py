@@ -7,7 +7,7 @@ tokens = re2lexer.tokens
 #grammar structure obtained from https://pubs.opengroup.org/onlinepubs/000095399/basedefs/xbd_chap09.html
 								
 def p_regex(p):
-	'regex : alternative'
+	'regex : alternative '
 	p[0] = ir.whole_regexp(p[1])
 
 def p_alternative(p):
@@ -54,10 +54,34 @@ def p_repetition(p):
 
 def p_subexpr(p):
 	'''subexpr 	: LPAR alternative RPAR 
-				| CHAR'''
-
-	if p[1] == '(' :
+				| CHAR
+				| HEXA
+				| WHITESPACE
+				| ANYCHAR'''
+	#access lexer object through
+	#p.slice[i]
+	#print('try',p.slice[1], p[1])
+	if 	 p.slice[1].type == 'LPAR' :
 		p[0] = p[2]
+	elif p.slice[1].type == 'WHITESPACE':
+		#from https://docs.python.org/3.8/library/re.html
+		#For Unicode (str) patterns:
+		#Matches Unicode whitespace characters (which includes [ \t\n\r\f\v], and also many other characters, 
+		# for example the non-breaking spaces mandated by typography rules in many languages). 
+		#If the ASCII flag is used, only [ \t\n\r\f\v] is matched.
+		#
+		#or 8-bit (bytes) patterns:
+		#Matches characters considered whitespace in the ASCII character set; this is equivalent to [ \t\n\r\f\v].
+		#	 and https://docs.microsoft.com/en-us/cpp/c-language/escape-sequences?view=vs-2019
+		p[0] = ir.alternative(	ir.match_character(' '),
+							  	ir.match_character('\t'),
+							   	ir.match_character('\n'),
+							   	ir.match_character('\r'),
+							   	ir.match_character('\f'),
+							   	ir.match_character('\v'))
+	elif p.slice[1].type == 'ANYCHAR':
+		print('test')
+		p[0] = ir.any_character()
 	else:
 		p[0] = ir.match_character(p[1])
 	

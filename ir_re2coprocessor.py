@@ -1,10 +1,11 @@
 from enum import Enum
 class Instr_type(Enum):
-	ACCEPT = 0
-	SPLIT  = 1
-	MATCH  = 2
-	JMP	   = 3
+	ACCEPT 			      = 0
+	SPLIT  			      = 1
+	MATCH  			      = 2
+	JMP	   			      = 3
 	END_WITHOUT_ACCEPTING = 4
+	MATCH_ANY 		      = 5
 
 class Instr:
 	def __init__(self, pc, instr_type, data):
@@ -52,6 +53,14 @@ class Match(Instr):
 	def dotty_str(self):
 		return (f"{self.pc} -> {self.pc+1}\n"+
 				f"{self.pc} [label =\"{self.pc} : {self.data}\" color=\"black\" fillcolor=\"#ffa822\" style=\"filled\"]\n"             )
+
+class Match_any(Instr):
+	def __init__(self,pc):
+		super().__init__(pc, Instr_type.MATCH_ANY, 0)
+	
+	def dotty_str(self):
+		return (f"{self.pc} -> {self.pc+1}\n"+
+				f"{self.pc} [label =\"{self.pc} : . \" color=\"black\" fillcolor=\"#ffa822\" style=\"filled\"]\n"             )
 
 class Jmp(Instr):
 	def __init__(self, pc, data):

@@ -47,6 +47,12 @@ class ir_node:
 		return type(self).__name__
 
 sub_regex = namedtuple('sub_regex', ['start', 'end'])
+class any_char(ir_node):
+	def __init__(self, *others):
+		super().__init__(*others)
+	
+	def lower(self):
+		raise NotImplementedError()
 
 class alternative(ir_node):
 	def __init__(self, *others):
@@ -85,7 +91,7 @@ class concatenation(ir_node):
 		
 	def append(self,other):
 		self.children += [other]
-	
+
 	def lower(self):
 		lowered_children = super().lower()
 		for i in range(len(lowered_children)-1):
@@ -152,6 +158,17 @@ class match_character(ir_node):
 
 	def lower(self):
 		x= ir_lower.Match(self.character)
+		return sub_regex(x,x)
+
+class any_character(ir_node):
+	def __init__(self):
+		super().__init__()
+	
+	def dotty_str(self):
+		return f" {id(self)} [label=\".\"]"
+
+	def lower(self):
+		x= ir_lower.Match_any()
 		return sub_regex(x,x)
 
 

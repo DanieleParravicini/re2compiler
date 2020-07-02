@@ -200,7 +200,8 @@ def check_infinite_loops(start_node :ir_lower.IrInstr):
 			
 			if not( x in reachable_from_without_match.keys()):
 				reachable_from_without_match[x] = []
-				if not isinstance(x, ir_lower.Match):
+				if not ( isinstance(x, ir_lower.Match) or 
+				         isinstance(x, ir_lower.Match_any) ) :
 					reachable_from_without_match[x] = x.children
 							
 

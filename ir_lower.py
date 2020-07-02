@@ -116,6 +116,21 @@ class Match(IrInstr):
 		anInstr = ir_re2coprocessor.Match(pc,self.char)
 		list_instructions[pc] = anInstr
 
+class Match_any(IrInstr):
+	def __init__(self):
+		super().__init__()
+		
+		
+	def dotty_repr(self):
+		return f"{id(self)} [label =\".\" color=\"black\" fillcolor=\"#ffa822\" style=\"filled\"]\n"
+
+	def _code_gen(self,  pc, list_ir_instructions: list,  list_instructions: list):
+		next_pc = list_ir_instructions.index(self.children[0])
+		assert pc +1 == next_pc, str(pc+1)+ " !== "+ str(next_pc)
+
+		anInstr = ir_re2coprocessor.Match_any(pc)
+		list_instructions[pc] = anInstr
+
 class Jmp(IrInstr):
 	def __init__(self, next):
 		super().__init__(next)
