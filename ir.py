@@ -173,12 +173,16 @@ class any_character(ir_node):
 
 
 class whole_regexp(ir_node):
-	def __init__(self, regex, accept_partial=True):
+	def __init__(self, regex, accept_partial=True, ignore_prefix=False):
 		self.accept_partial = accept_partial
+		self.ignore_prefix  = ignore_prefix
 		super().__init__(regex)
 
 	def set_accept_partial(self, accept_partial=True):
 		self.accept_partial = accept_partial
+	
+	def set_ignore_prefix(self, ignore_prefix=True):
+		self.ignore_prefix  = ignore_prefix
 
 	def dotty_str(self):
 		tmp = [ (c.dotty_str() if hasattr(c, 'dotty_str') else str(c))+'\n' for c in self.children]
@@ -188,12 +192,20 @@ class whole_regexp(ir_node):
 	def lower(self):
 		
 		
-		end = ir_lower.Accept_Partial() if self.accept_partial else ir_lower.Accept()
 		lowered_children = super().lower()
 		assert len(lowered_children) == 1
+		end = ir_lower.Accept_Partial() if self.accept_partial else ir_lower.Accept()
 		child = lowered_children[0]
+		if self.ignore_prefix :
+			start     = ir_lower.Split()
+			jmp       = ir_lower.Jmp(start)
+			match_any = ir_lower.Match_any(jmp)
+			start.append(match_any)
+			start.append(child.start)
+		else:
+			start     = child.start
 		child.end.append(end)
 
-		return child.start
+		return start
 	
 		 

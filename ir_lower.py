@@ -92,8 +92,8 @@ class Accept_Partial(IrInstr):
 		list_instructions[pc] = anInstr
 
 class Split(IrInstr):
-	def __init__(self, next, next_splitted):
-		super().__init__(next, next_splitted)
+	def __init__(self, *children):
+		super().__init__(*children)
 
 	def dotty_repr(self):
 		return f"{id(self)} [label=\"SPLIT\" color=\"black\" fillcolor=\"#dee0e6\" style=\"filled\"]\n"
@@ -128,8 +128,8 @@ class Match(IrInstr):
 		list_instructions[pc] = anInstr
 
 class Match_any(IrInstr):
-	def __init__(self):
-		super().__init__()
+	def __init__(self, *children):
+		super().__init__(*children)
 		
 		
 	def dotty_repr(self):
