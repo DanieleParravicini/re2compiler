@@ -60,7 +60,7 @@ def p_subexpr(p):
 				| ANYCHAR'''
 	#access lexer object through
 	#p.slice[i]
-	#print('try',p.slice[1], p[1])
+	print('try',p.slice[1], p[1])
 	if 	 p.slice[1].type == 'LPAR' :
 		p[0] = p[2]
 	elif p.slice[1].type == 'WHITESPACE':
@@ -80,7 +80,6 @@ def p_subexpr(p):
 							   	ir.match_character('\f'),
 							   	ir.match_character('\v'))
 	elif p.slice[1].type == 'ANYCHAR':
-		print('test')
 		p[0] = ir.any_character()
 	else:
 		p[0] = ir.match_character(p[1])
