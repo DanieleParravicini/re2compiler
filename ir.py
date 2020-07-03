@@ -165,7 +165,7 @@ class any_character(ir_node):
 		super().__init__()
 	
 	def dotty_str(self):
-		return f" {id(self)} [label=\".\"]"
+		return f" {id(self)} [label=\"\\.\"]"
 
 	def lower(self):
 		x= ir_lower.Match_any()

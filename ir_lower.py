@@ -133,7 +133,7 @@ class Match_any(IrInstr):
 		
 		
 	def dotty_repr(self):
-		return f"{id(self)} [label =\".\" color=\"black\" fillcolor=\"#ffa822\" style=\"filled\"]\n"
+		return f"{id(self)} [label =\"\\.\" color=\"black\" fillcolor=\"#ffa822\" style=\"filled\"]\n"
 
 	def _code_gen(self,  pc, list_ir_instructions: list,  list_instructions: list):
 		next_pc = list_ir_instructions.index(self.children[0])

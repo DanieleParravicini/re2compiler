@@ -68,7 +68,7 @@ class Match_any(Instr):
 	
 	def dotty_str(self):
 		return (f"{self.pc} -> {self.pc+1}\n"+
-				f"{self.pc} [label =\"{self.pc} : . \" color=\"black\" fillcolor=\"#ffa822\" style=\"filled\"]\n"             )
+				f"{self.pc} [label =\"{self.pc} : \\. \" color=\"black\" fillcolor=\"#ffa822\" style=\"filled\"]\n"             )
 
 class Jmp(Instr):
 	def __init__(self, pc, data):

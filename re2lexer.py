@@ -3,8 +3,8 @@ import ply.lex as lex
 # List of token names.   This is always required
 tokens = (
 'ANYCHAR',
-'CHAR',
 'WHITESPACE',
+'ESCAPED',
 'HEXA',
 'PLUS',
 'TIMES',
@@ -12,22 +12,46 @@ tokens = (
 'OR',
 'LPAR',
 'RPAR',
+'CHAR',
 )
 
 # Regular expression rules for simple tokens
-t_PLUS    		= r'\+'
-t_TIMES   		= r'\*'
-t_LPAR    		= r'\('
-t_RPAR	  		= r'\)'
-t_OPT     		= r'\?'
-t_OR      		= r'\|'
-t_WHITESPACE    = r'\\s'
-t_ANYCHAR      = r'\.'
+def t_ESCAPED(t):
+	r'\\[\\*+()?.]'
+	t.type 	= 'CHAR'
+	t.value = t.value[1:]
+	return t
 
-# A regular expression rule with some action code
-def t_CHAR( t):
-	r'[a-zA-Z0-9]'
-	t.value = t.value.encode('utf-8')[0]
+def t_WHITESPACE(t):
+	r'\\s'
+	return t
+
+def t_LPAR(t):
+	r'\('
+	return t
+
+def t_RPAR(t):
+	r'\)'
+	return t
+
+def t_OPT (t):
+	r'\?'
+	return t
+
+def t_OR  (t):
+	r'\|'
+	return t
+
+def t_ANYCHAR(t):
+	r'\.'
+	return t
+
+def t_PLUS(t):
+	r'\+'
+	return t
+
+def t_TIMES(t):
+	r'\*'
 	return t
 
 def t_HEXA( t):
@@ -36,12 +60,15 @@ def t_HEXA( t):
 	t.value = int(t.value[2:], 16)
 	return t
 
-# A string containing ignored characters (spaces and tabs)
-t_ignore  = ' \t'
+def t_CHAR( t):
+	r'[\x20-\x7F]'
+	t.value = t.value.encode('utf-8')[0]
+	return t
+
 
 # Error handling rule
 def t_error( t):
-	print("Illegal character '%s'" % t.value[0])
+	print("Illegal character '%s'" % t.value[0], 'pos', t)
 	raise Exception('Regex format error')
 
 ## Build the lexe
