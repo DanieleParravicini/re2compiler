@@ -74,6 +74,8 @@ def enhance_splits(start_node, debug=False):
 	for child in father:
 		if len(father[child]) >= 2:
 			double_fathers.append(child)
+	if not( start_node in double_fathers):
+		double_fathers.append(start_node)
 	if debug:
 		print('childrens')
 		pretty_printer(children)
@@ -124,7 +126,7 @@ def enhance_splits(start_node, debug=False):
 		print('group->split')
 		pretty_printer(split_group_to_splits)
 	#now we can manipulate the code so that splits are all parallel
-
+	i = 0
 	for split_anchestor in split_group_to_splits:
 		#ignore unoptimizable splits
 		if len(split_group_to_splits[split_anchestor]) == 1:
@@ -134,14 +136,26 @@ def enhance_splits(start_node, debug=False):
 		#take all their children ignoring splits which belong to the group
 		all_children = list(itertools.chain(*[ s.children for s in splits]))
 		all_children = list(filter(lambda x: x not in splits, all_children))
-		#print(all_children)
+		#eliminate splits from father
+		for s in splits:
+			for c in s.children:
+				father[c].remove(s)
+		
 		#organize all children in a well shaped tree
 		while len(all_children)>=2:
 			#print(len(all_children))
 			option0 = all_children.pop(0)
 			option1 = all_children.pop(0)
 			split   = ir_lower.Split(option0, option1)
-
+			#update father relationship
+			#pretty_printer(father)
+			if not( option0 in father.keys()):
+				father[option0] = []
+			
+			father[option0].append(split)
+			if not( option1 in father.keys()):
+				father[option1] = []
+			father[option1].append(split)
 			all_children.append(split)
 		#tree root is new_split_anchestor
 		new_split_anchestor = all_children[0]
@@ -152,8 +166,24 @@ def enhance_splits(start_node, debug=False):
 		if split_anchestor in father:
 			for f in father[split_anchestor]:
 				f.replace(split_anchestor,new_split_anchestor )
-
+			#update father relationship
+			for f in father:
+				if split_anchestor in father[f]:
+				   father[f].remove(split_anchestor)
+				   father[f].append(new_split_anchestor)
+		if debug:
+			with open('debug'+str(i)+'.dot', 'w', encoding="utf-8") as f:
+				f.write('digraph{\n')
+				start_node.navigate(save_dotty(f))
+				f.write('\n}')
+		i+=1
 	return start_node
+
+def save_dotty(fout):
+	def save_dotty_action(x):
+		fout.write( x.dotty_str() )
+
+	return save_dotty_action
 
 def simplify_jumps_backend(instr_list):
 	#eliminate useless jumps

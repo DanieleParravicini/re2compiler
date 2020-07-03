@@ -80,7 +80,6 @@ def p_subexpr(p):
 							   	ir.match_character('\f'),
 							   	ir.match_character('\v'))
 	elif p.slice[1].type == 'ANYCHAR':
-		print('test')
 		p[0] = ir.any_character()
 	else:
 		p[0] = ir.match_character(p[1])
