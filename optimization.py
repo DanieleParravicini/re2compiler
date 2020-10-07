@@ -1,7 +1,8 @@
-import ir_lower
+import ir
 import ir_re2coprocessor
 import itertools
 import pprint
+from helper import reverse
 
 def pretty_printer(dictionary):
 	pprint.PrettyPrinter(indent=4).pprint(dictionary)
@@ -14,11 +15,11 @@ def eliminate_nops(start_node):
 		nodes = start_node.getNodes()
 		for node in nodes:
 			for i in range(len(node.children)):
-				if isinstance(node.children[i] , ir_lower.PlaceholderNop):
+				if isinstance(node.children[i] , ir.PlaceholderNop):
 					node.replace(node.children[i], node.children[i].children[0])
 					still_a_nop = True
 					
-	if isinstance(start_node, ir_lower.PlaceholderNop):
+	if isinstance(start_node, ir.PlaceholderNop):
 		return start_node.children[0]
 	else:
 		return start_node
@@ -34,41 +35,25 @@ def simplify_jumps(start_node):
 		nodes = start_node.getNodes()
 		for node in nodes:
 			for i in range(len(node.children)):
-				if ( isinstance(node.children[i] , ir_lower.Jmp) and 
-					 isinstance(node.children[i].children[0] , ir_lower.Jmp) ):
-					node.replace(node.children[i], ir_lower.Jmp(node.children[i].children[0].children[0]))
+				if ( isinstance(node.children[i] , ir.Jmp) and 
+					 isinstance(node.children[i].children[0] , ir.Jmp) ):
+					node.replace(node.children[i], ir.Jmp(node.children[i].children[0].children[0]))
 					something_changed = True
-		if (isinstance(start_node , ir_lower.Jmp) and 
-			isinstance(start_node.children[0] , ir_lower.Jmp)):
+		if (isinstance(start_node , ir.Jmp) and 
+			isinstance(start_node.children[0] , ir.Jmp)):
 		   start_node = start_node.children[0]
 		   something_changed = True
 	
 	return start_node
-
-def reverse(dictionary):
-	revdict = {}
-	for k, v in dictionary.items():
-		if isinstance(v, list):
-			for e in v:
-				revdict.setdefault(e, []).append(k)
-		else:
-			revdict.setdefault(v, []).append(k)
-	return revdict
 
 def enhance_splits(start_node, debug=False):
 	# enhance splits
 	
 	#collect split
 	nodes = start_node.getNodes()
-	split_nodes = list(filter(lambda x: isinstance(x, ir_lower.Split), nodes))
-	
-	children = {}
-	for n in nodes:
-		if len(n.children)>0:
-			children[n] = n.children
+	father = start_node.get_anchestors()
 
-	
-	father = reverse(children)
+	split_nodes = list(filter(lambda x: isinstance(x, ir.Split), nodes))
 	
 	double_fathers = []
 	for child in father:
@@ -103,7 +88,7 @@ def enhance_splits(start_node, debug=False):
 		if not( node in split_anchestor ):
 			split_anchestor[node] = node
 		#then consider all its child and set <node> as their split_anchestor
-		directly_connected_splits = filter(lambda x: isinstance(x,ir_lower.Split) and not(x in double_fathers) , node.children)
+		directly_connected_splits = filter(lambda x: isinstance(x,ir.Split) and not(x in double_fathers) , node.children)
 		for connected_split in directly_connected_splits :
 			split_anchestor[connected_split] = split_anchestor[node]
 	
@@ -112,7 +97,7 @@ def enhance_splits(start_node, debug=False):
 	while something_changed :
 		something_changed = False
 		for node in split_nodes:
-			directly_connected_splits = filter(lambda x: isinstance(x,ir_lower.Split) and not(x in double_fathers), node.children)
+			directly_connected_splits = filter(lambda x: isinstance(x,ir.Split) and not(x in double_fathers), node.children)
 			for connected_split in directly_connected_splits :
 				if not( split_anchestor[connected_split] == split_anchestor[node]):
 					something_changed = True
@@ -146,7 +131,7 @@ def enhance_splits(start_node, debug=False):
 			#print(len(all_children))
 			option0 = all_children.pop(0)
 			option1 = all_children.pop(0)
-			split   = ir_lower.Split(option0, option1)
+			split   = ir.Split(option0, option1)
 			#update father relationship
 			#pretty_printer(father)
 			if not( option0 in father.keys()):
@@ -185,53 +170,17 @@ def save_dotty(fout):
 
 	return save_dotty_action
 
-def simplify_jumps_backend(instr_list):
-	#eliminate useless jumps
-	#a) 1:jmp(2) -> 2:xxx
 
-	def decrement_target_pc(i, instr_list):
-		for j in range( len(instr_list)):
-			if (isinstance(instr_list[j], ir_re2coprocessor.Jmp) 
-				and	instr_list[j].data > i): 
-					instr_list[j].data-=1
-			elif (isinstance(instr_list[j], ir_re2coprocessor.Split) 
-				and	instr_list[j].data > i): 
-					instr_list[j].data-=1
 
-		return instr_list
-	
-	def decrement_pc(i, instr_list):
-		for j in range(i+1, len(instr_list)):
-			instr_list[j].pc = instr_list[j].pc - 1
-		return instr_list
-
-	
-	something_changed = True
-	while something_changed:
-		something_changed = False
-		i = 0
-		while i < len(instr_list):
-			if (    isinstance(instr_list[i] , ir_re2coprocessor.Jmp) 
-					and	instr_list[i].data == i+1 ):
-					instr_list = decrement_target_pc(i, instr_list)
-					instr_list = decrement_pc(i,instr_list)
-					del instr_list[i]
-					something_changed = True
-			else:
-			 	i+=1
-				
-	
-	return instr_list
-
-def check_infinite_loops(start_node :ir_lower.IrInstr):
+def check_infinite_loops(start_node :ir.IrInstr):
 	def collect_reachable_without_match(reachable_from_without_match):
 		
 		def action_collect_reachable_without_match(x):
 			
 			if not( x in reachable_from_without_match.keys()):
 				reachable_from_without_match[x] = []
-				if not ( isinstance(x, ir_lower.Match) or 
-				         isinstance(x, ir_lower.Match_any) ) :
+				if not ( isinstance(x, ir.Match) or 
+				         isinstance(x, ir.Match_any) ) :
 					reachable_from_without_match[x] = x.children
 							
 
@@ -272,11 +221,11 @@ def check_infinite_loops(start_node :ir_lower.IrInstr):
 
 
 if __name__ == "__main__":
-	a = ir_lower.Match('a')
-	b = ir_lower.Match('b')
-	nop   = ir_lower.PlaceholderNop()
-	start = ir_lower.Split(a,nop)
-	split = ir_lower.Split(start, b)
+	a = ir.Match('a')
+	b = ir.Match('b')
+	nop   = ir.PlaceholderNop()
+	start = ir.Split(a,nop)
+	split = ir.Split(start, b)
 	nop.append(split)
 
 	#nodes = start.getNodes()
@@ -293,9 +242,9 @@ if __name__ == "__main__":
 	except Exception :
 		print('OK')
 	
-	nop   = ir_lower.PlaceholderNop()
-	start = ir_lower.Jmp(nop)
-	jmp   = ir_lower.Jmp(start)
+	nop   = ir.PlaceholderNop()
+	start = ir.Jmp(nop)
+	jmp   = ir.Jmp(start)
 	nop.append(jmp)
 
 	#nodes = start.getNodes()

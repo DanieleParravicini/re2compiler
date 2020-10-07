@@ -1,0 +1,210 @@
+import ir
+from collections import namedtuple
+
+class ast_refined_node:
+	def __init__(self, *children):
+		self.mapping 	= []
+		self.children 	= list(children) if children else []
+
+	def getattr(self, name):
+		idx = self.mapping.index(name)
+		return self.children[idx] if(idx > 0) else None
+	
+	def setattr(self, name, value):
+		idx = self.mapping.index(name)
+		if( idx > 0 and idx < len(self.children)):
+			self.children[idx] = value
+		
+	def navigate(self,action, postOrder=False ):
+
+		if not postOrder:
+			action(self)
+		for c in self.children:
+			try :
+				c.navigate(action,postOrder)
+			except Exception:
+				print('exception')
+				pass
+		if postOrder:
+			action(self)
+	
+	def to_ir(self):
+		'''the to_ir method returns for each node of the abstract syntax tree two nodes
+		The first is the starting node of the sub regular expression
+		the second is the last node if the sub regular expression'''
+		return [c.to_ir() for c in self.children]
+
+	
+	def dotty_str(self):
+		tmp = [ (c.dotty_str() if hasattr(c, 'dotty_str') else str(c))+'\n' for c in self.children]
+		
+		children_link =[f"{id(self)} -> {id(c)}\n" for c in self.children]
+
+		return "".join(tmp) + "".join(children_link)+ f" {id(self)} [label=\"{str(self)}\"]"
+
+	def __str__(self):
+		return type(self).__name__
+
+sub_regex = namedtuple('sub_regex', ['start', 'end'])
+class any_char(ast_refined_node):
+	def __init__(self, *others):
+		super().__init__(*others)
+	
+	def to_ir(self):
+		raise NotImplementedError()
+
+class alternative(ast_refined_node):
+	def __init__(self, *others):
+		super().__init__(*others)
+
+	def append(self,other):
+		self.children += [other]
+	
+	def to_ir(self):
+		
+		end   = ir.PlaceholderNop()
+
+		lowered_children = super().to_ir()
+		
+		for c in lowered_children:
+			jmp = ir.Jmp(end)
+			c.end.append(jmp)
+
+		#lowered_children[-1].end.append(end)
+
+		while(len(lowered_children) >= 2):
+			
+			option1 = lowered_children.pop(0).start
+			option2 = lowered_children.pop(0).start
+			
+			split 	= ir.Split(option1,option2)
+			lowered_children.append(sub_regex(split,None))
+		
+		start  = lowered_children[0].start
+
+		return sub_regex(start,end)
+		
+class concatenation(ast_refined_node):
+	def __init__(self, *others):
+		super().__init__(*others)
+		
+	def append(self,other):
+		self.children += [other]
+
+	def to_ir(self):
+		lowered_children = super().to_ir()
+		for i in range(len(lowered_children)-1):
+			lowered_children[i].end.append(lowered_children[i+1].start)
+
+		return sub_regex(lowered_children[0].start, lowered_children[-1].end)
+
+class any_repetition(ast_refined_node):
+	def __init__(self, regex_to_repeat):
+		super().__init__(regex_to_repeat)
+
+	def to_ir(self):
+		
+		end   = ir.PlaceholderNop()
+		
+		lowered_children = super().to_ir()
+		assert len(lowered_children)==1
+		
+		start = ir.Split(lowered_children[0].start, end)
+		jmp   = ir.Jmp(start)
+		lowered_children[0].end.append(jmp)
+		return sub_regex(start,end)
+
+class more_than_one_repetition(ast_refined_node):
+	def __init__(self, regex_to_repeat):
+		super().__init__(regex_to_repeat)
+
+	def to_ir(self):
+		end = ir.PlaceholderNop()
+		lowered_children = super().to_ir()
+		assert len(lowered_children)==1
+		start = lowered_children[0].start
+
+		split = ir.Split(end, start)
+		
+		lowered_children[0].end.append(split)
+		return sub_regex(start,end)
+		
+
+class optional_repetition(ast_refined_node):
+	def __init__(self, regex_to_repeat):
+		super().__init__(regex_to_repeat)
+
+	def to_ir(self):
+		end = ir.PlaceholderNop()
+		lowered_children = super().to_ir()
+		assert len(lowered_children) == 1
+
+		start = ir.Split(lowered_children[0].start, end)
+		lowered_children[0].end.append(ir.Jmp(end))
+		return sub_regex(start,end)
+
+class match_character(ast_refined_node):
+	def __init__(self, character):
+		super().__init__()
+
+		if isinstance(character, str):
+			self.character = bytes(character, 'utf-8')[0]
+		else:
+			self.character = character
+	
+	def dotty_str(self):
+		return f" {id(self)} [label=\"{chr(self.character)}\"]"
+
+	def to_ir(self):
+		x= ir.Match(self.character)
+		return sub_regex(x,x)
+
+class any_character(ast_refined_node):
+	def __init__(self):
+		super().__init__()
+	
+	def dotty_str(self):
+		return f" {id(self)} [label=\"\\.\"]"
+
+	def to_ir(self):
+		x= ir.Match_any()
+		return sub_regex(x,x)
+
+
+class whole_regexp(ast_refined_node):
+	def __init__(self, regex, accept_partial=True, ignore_prefix=False):
+		self.accept_partial = accept_partial
+		self.ignore_prefix  = ignore_prefix
+		super().__init__(regex)
+
+	def set_accept_partial(self, accept_partial=True):
+		self.accept_partial = accept_partial
+	
+	def set_ignore_prefix(self, ignore_prefix=True):
+		self.ignore_prefix  = ignore_prefix
+
+	def dotty_str(self):
+		tmp = [ (c.dotty_str() if hasattr(c, 'dotty_str') else str(c))+'\n' for c in self.children]
+		
+		return 'digraph {'+"".join(tmp)+'}'
+	
+	def to_ir(self):
+		
+		
+		lowered_children = super().to_ir()
+		assert len(lowered_children) == 1
+		end = ir.Accept_Partial() if self.accept_partial else ir.Accept()
+		child = lowered_children[0]
+		if self.ignore_prefix :
+			start     = ir.Split()
+			jmp       = ir.Jmp(start)
+			match_any = ir.Match_any(jmp)
+			start.append(match_any)
+			start.append(child.start)
+		else:
+			start     = child.start
+		child.end.append(end)
+
+		return start
+	
+		 

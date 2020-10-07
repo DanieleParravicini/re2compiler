@@ -1,5 +1,6 @@
 from enum import Enum
-class Instr_type(Enum):
+
+class Re2CoproInstr_type(Enum):
 	ACCEPT 			      = 0
 	SPLIT  			      = 1
 	MATCH  			      = 2
@@ -8,7 +9,7 @@ class Instr_type(Enum):
 	MATCH_ANY 		      = 5
 	ACCEPT_PARTIAL	      = 6
 
-class Instr:
+class Re2CoproInstr:
 	def __init__(self, pc, instr_type, data):
 		self.pc   = pc
 		self.type = instr_type
@@ -30,57 +31,57 @@ class Instr:
 		assert self.data < 255
 		return f"{self.type.value} ; {self.data}\n"
 
-class Accept(Instr):
+class Accept(Re2CoproInstr):
 	def __init__(self, pc):
-		super().__init__(pc, Instr_type.ACCEPT, 0)
+		super().__init__(pc, Re2CoproInstr_type.ACCEPT, 0)
 
 	def dotty_str(self):
 		return f"{self.pc} [label=\"{self.pc} : \\\\00 => ✓\" color=\"black\"  fillcolor=\"#1ac0c6\"	style=\"filled\"]\n"
 
-class Accept_Partial(Instr):
+class Accept_Partial(Re2CoproInstr):
 	def __init__(self, pc):
-		super().__init__(pc, Instr_type.ACCEPT_PARTIAL, 0)
+		super().__init__(pc, Re2CoproInstr_type.ACCEPT_PARTIAL, 0)
 
 	def dotty_str(self):
 		return f"{self.pc} [label=\"{self.pc} : ✓\" color=\"black\"  fillcolor=\"#1ac0c6\"	style=\"filled\"]\n"
 
 
-class Split(Instr):
+class Split(Re2CoproInstr):
 	def __init__(self, pc, data):
-		super().__init__(pc, Instr_type.SPLIT, data)
+		super().__init__(pc, Re2CoproInstr_type.SPLIT, data)
 
 	def dotty_str(self):
 		return 	(f"{self.pc} -> {self.data}\n" +
 			   	 f"{self.pc} -> {self.pc+1}\n" +
-        		 f"{self.pc} [color=\"black\" fillcolor=\"#dee0e6\" style=\"filled\"]\n")
+				 f"{self.pc} [color=\"black\" fillcolor=\"#dee0e6\" style=\"filled\"]\n")
 
-class Match(Instr):
+class Match(Re2CoproInstr):
 	def __init__(self,pc, char):
-		super().__init__(pc, Instr_type.MATCH, char)
+		super().__init__(pc, Re2CoproInstr_type.MATCH, char)
 	
 	def dotty_str(self):
 		return (f"{self.pc} -> {self.pc+1}\n"+
 				f"{self.pc} [label =\"{self.pc} : {self.data}\" color=\"black\" fillcolor=\"#ffa822\" style=\"filled\"]\n"             )
 
-class Match_any(Instr):
+class Match_any(Re2CoproInstr):
 	def __init__(self,pc):
-		super().__init__(pc, Instr_type.MATCH_ANY, 0)
+		super().__init__(pc, Re2CoproInstr_type.MATCH_ANY, 0)
 	
 	def dotty_str(self):
 		return (f"{self.pc} -> {self.pc+1}\n"+
 				f"{self.pc} [label =\"{self.pc} : \\. \" color=\"black\" fillcolor=\"#ffa822\" style=\"filled\"]\n"             )
 
-class Jmp(Instr):
+class Jmp(Re2CoproInstr):
 	def __init__(self, pc, data):
-		super().__init__(pc, Instr_type.JMP, data)
+		super().__init__(pc, Re2CoproInstr_type.JMP, data)
 	
 	def dotty_str(self):
 		return (f"{self.pc} -> {self.data}\n"+
-                f"{self.pc} [color=\"black\" fillcolor=\"#2792ce\" style=\"filled\"]\n")
+				f"{self.pc} [color=\"black\" fillcolor=\"#2792ce\" style=\"filled\"]\n")
 
-class End(Instr):
+class End(Re2CoproInstr):
 	def __init__(self, pc):
-		super().__init__(pc, Instr_type.END_WITHOUT_ACCEPTING, 0 )
+		super().__init__(pc, Re2CoproInstr_type.END_WITHOUT_ACCEPTING, 0 )
 
 	def dotty_str(self):
 		return f"{self.pc} [label =\"{self.pc} : ✗\" color=\"black\" fillcolor=\"#ff6150\"	style=\"filled\"]\n"
