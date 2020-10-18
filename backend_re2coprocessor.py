@@ -63,3 +63,4 @@ def to_code(ir, O1=False, dotcode=None, o=None):
 	if(o is not None):
 		with open(o, 'w', encoding="utf-8") as f:
 			f.write(ocontent)
+	return ocontent
