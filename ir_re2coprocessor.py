@@ -1,5 +1,8 @@
 from enum import Enum
 
+#if you want to estimate code size without actually run this code on CICERO
+ESTIMATE_CODE_SIZE = True
+
 class Re2CoproInstr_type(Enum):
 	ACCEPT 			      = 0
 	SPLIT  			      = 1
@@ -28,7 +31,11 @@ class Re2CoproInstr:
 		return f"{id(self)} [label=\"unknown\" color=\"black\"  fillcolor=\"gray\"	style=\"filled\" ]\n"
 
 	def code(self):
-		assert self.data < 255
+		if ESTIMATE_CODE_SIZE and self.data > 255:
+			import warnings
+			warnings.warn("this code can't be executed as it possibly exceed the bits dedicated to pc", Warning)
+		elif not ESTIMATE_CODE_SIZE:
+			assert self.data < 255
 		return f"{self.type.value} ; {self.data}\n"
 
 class Accept(Re2CoproInstr):
