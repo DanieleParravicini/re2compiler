@@ -153,7 +153,11 @@ class match_character(ast_refined_node):
 			self.character = character
 	
 	def dotty_str(self):
-		return f" {id(self)} [label=\"{chr(self.character)}\"]"
+		# printable Ascii \x20-\x7F
+		char = chr(self.character)
+		if self.character < 32 or self.character > 127 or char in "\"\\":
+			char = hex(self.character)
+		return f" {id(self)} [label=\"{char}\"]"
 
 	def to_ir(self):
 		x= ir.Match(self.character)

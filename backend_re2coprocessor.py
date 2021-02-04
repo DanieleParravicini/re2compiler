@@ -49,18 +49,18 @@ def code_gen(ir):
 
 def to_code(ir, O1=False, dotcode=None, o=None):
 	ir.setup('ir_re2coprocessor_codegen')
-	list_istr = code_gen(ir)
+	list_instr = code_gen(ir)
 	
 	if O1:
-		list_istr = simplify_jumps_backend(list_istr)
+		list_instr = simplify_jumps_backend(list_instr)
 	
 	if(dotcode is not None):
 		with open(dotcode, 'w', encoding="utf-8") as f:
-			dot_content = 'digraph {\n'+"".join([instr.dotty_str() for instr in list_istr ])+'}'
+			dot_content = 'digraph {\n'+"".join([instr.dotty_str() for instr in list_instr ])+'}'
 			f.write(dot_content)
 
-	ocontent = "".join([instr.code() for instr in list_istr ])
+	o_content = "".join([instr.code() for instr in list_instr ])
 	if(o is not None):
 		with open(o, 'w', encoding="utf-8") as f:
-			f.write(ocontent)
-	return ocontent
+			f.write(o_content)
+	return o_content

@@ -10,10 +10,10 @@ class IrInstr:
 	def __init__(self, *some_children):
 		self.children = list([*some_children])
 
-	def replace(self, curr, next_curr):
+	def replace(self, curr, new_curr):
 		i = self.children.index(curr)
 		if(i >= 0):
-			self.children[i] = next_curr
+			self.children[i] = new_curr
 
 	def append(self, *other):
 		self.children += list([*other])
@@ -22,15 +22,17 @@ class IrInstr:
 		return f"{id(self)} TYPE: {type(self)} #CHILDREN {len(self.children)}"
 	
 	def dotty_repr(self):
+		'''give a representation of this node only. '''
 		return f"{id(self)} [label=\"unknown\" color=\"black\"  fillcolor=\"gray\"	style=\"filled\" ]\n"
 
 	def dotty_str(self, reset_visited=False):
-
+		'''give a representation of the whole subgraph. '''
 		children_link = [f"{id(self)} -> {id(c)}\n" for c in self.children]
 
 		return "".join(children_link)+ self.dotty_repr()
 
-	def navigate(self,action):
+	def navigate(self, action, filtering_predicate= None):
+		#preorder visit
 		visited 	= []
 		to_visit 	= [self]
 
@@ -42,9 +44,10 @@ class IrInstr:
 			action(e)
 			#append children in reversed order because elements to visit 
 			#are popped from to_visit list. Hence in order to have
-			# as first elem to visiti the first children, just push
+			# as first elem to visit the first children, just push
 			# children in to_visit list in reversed order.
-			for child in reversed(e.children):
+			visit_next = e.children if filtering_predicate == None else filter(filtering_predicate, e.children)
+			for child in reversed(visit_next):
 				#print('\t',child)
 				if not (child in visited or child in to_visit):
 					to_visit.append(child)
@@ -62,16 +65,18 @@ class IrInstr:
 
 		return node_list
 	
-	def get_anchestors(self):
+	def get_ancestors(self):
 		nodes = self.getNodes()
 	
 		children = {}
+		
 		for n in nodes:
 			if len(n.children)>0:
 				children[n] = n.children
 
-		anchestors = reverse(children)
-		return anchestors
+		ancestors 		= reverse(children)
+		#NOOO: ancestors[self] = [] not true!!
+		return ancestors
 
 	def deep_copy(self):
 		
@@ -122,6 +127,12 @@ class IrInstr:
 				print("WARNING: codegen_library could not be attached to ",c.__name__)
 				raise e
 
+	def equiv(self, other):
+		'''verifies whether instruction i is equivalent to instruction j. 
+		   Note it does not consider subtree!!'''
+		#raise NotImplemented("equality was not overridden")
+		return isinstance(other, type(self))
+
 
 class Accept(IrInstr):
 	def __init__(self):
@@ -145,6 +156,13 @@ class Split(IrInstr):
 
 	def dotty_repr(self):
 		return f"{id(self)} [label=\"SPLIT\" color=\"black\" fillcolor=\"#dee0e6\" style=\"filled\"]\n"
+	
+	def equiv(self, other):
+		#if len(self.children) != len(other.children):
+		#	return False
+		#for c1 in self.children:
+
+		return False
 
 class Match(IrInstr):
 	def __init__(self, achar):
@@ -155,18 +173,21 @@ class Match(IrInstr):
 			self.char = achar
 		
 	def dotty_repr(self):
-		return f"{id(self)} [label =\"{chr(self.char)}\" color=\"black\" fillcolor=\"#ffa822\" style=\"filled\"]\n"
+		# printable Ascii \x20-\x7F
+		char = chr(self.char)
+		if self.char < 32 or self.char > 127  or char == "\"\\":
+			char = hex(self.char)
+		return f"{id(self)} [label =\"{char}\" color=\"black\" fillcolor=\"#ffa822\" style=\"filled\"]\n"
 
+	def equiv(self, other):
+		return super().equiv(other) and self.char == other.char
 
 class Match_any(IrInstr):
 	def __init__(self, *children):
 		super().__init__(*children)
-		
-		
+	
 	def dotty_repr(self):
 		return f"{id(self)} [label =\"\\.\" color=\"black\" fillcolor=\"#ffa822\" style=\"filled\"]\n"
-
-	
 
 class Jmp(IrInstr):
 	def __init__(self, next):
@@ -175,7 +196,8 @@ class Jmp(IrInstr):
 	def dotty_repr(self):
 		return f"{id(self)} [label=\"JMP\" color=\"black\" fillcolor=\"#2792ce\" style=\"filled\"]\n"
 
-	
+	def equiv(self, other):
+		return super().equiv(other) and self.children[0].equiv(self.children[0])
 
 class End_Without_Accepting(IrInstr):
 	def __init__(self):
@@ -184,7 +206,6 @@ class End_Without_Accepting(IrInstr):
 	def dotty_repr(self):
 		return f" {id(self)} [label =\"✗\" color=\"black\" fillcolor=\"#ff6150\"	style=\"filled\"]\n"
 
-
 class PlaceholderNop(IrInstr):
 	def __init__(self):
 		super().__init__()
@@ -192,3 +213,5 @@ class PlaceholderNop(IrInstr):
 	def dotty_repr(self):
 		return f" {id(self)} [label =\"Nop\" color=\"black\" fillcolor=\"white\"	style=\"filled\"]\n"
 
+	def equiv(self, other):
+		return super().equiv(other) and self.children[0].equiv(self.children[0])
