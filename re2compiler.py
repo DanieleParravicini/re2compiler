@@ -15,12 +15,11 @@ def compile(inputfile=None,data=None, o=None,
 			O1=None, full_match=False, allow_prefix=False,
 			backend="re2coprocessor"):
 	
-	assert not(full_match and allow_prefix), """Both request can't be accomodated simultaneously. 
+	assert not(full_match and allow_prefix), """Both request can't be accommodated simultaneously. 
 	full_match request to match the entire string from its first char to its last char. 
 	allow_prefix flag request only allows the first characters of the string to not match the regex. """
 	#programmatically import compiler backend
 	backend = importlib.import_module("backend_"+backend)
-	
 
 	if inputfile :
 		with open(inputfile,'r') as f:
@@ -34,9 +33,10 @@ def compile(inputfile=None,data=None, o=None,
 	ir = optimization.eliminate_nops(ir)
 	#if necessary
 	if O1:
+		ir = optimization.merge_redundant_parallel(ir)
 		ir = optimization.simplify_jumps(ir)
 		ir = optimization.enhance_splits(ir)
-	#check for harmful code behaviour
+	#check for harmful code behaviour exception in case
 	_ = optimization.check_infinite_loops(ir)
 
 	if(dotir is not None):
@@ -45,9 +45,9 @@ def compile(inputfile=None,data=None, o=None,
 			ir.navigate(save_dotty(f))
 			f.write('\n}')
 
-	ocontent  = backend.to_code(ir, dotcode=dotcode, o=o, O1=O1)
+	o_content  = backend.to_code(ir, dotcode=dotcode, o=o, O1=O1)
 	
-	return ocontent
+	return o_content
 
 
 if __name__ == "__main__":
@@ -57,7 +57,7 @@ if __name__ == "__main__":
 	arg_parser.add_argument('inputfile'		    , type=str, help='input file containing the regular expression.'																			, default=None, nargs='?')
 	arg_parser.add_argument('-data'		    	, type=str, help='allows to pass the input string representing the regular expression directly via parameter .'								, default=None, nargs='?')
 	arg_parser.add_argument('-full_match'	    , 			help='requires that regular expression matches the entire string'																, default=False, action='store_true')
-	arg_parser.add_argument('-allow_prefix'    , 			help='do not pose any constraint on where the regular expression starts matching the string. Corresponds to .*<your_regex>'	    , default=False, action='store_true')	
+	arg_parser.add_argument('-allow_prefix'     , 			help='do not pose any constraint on where the regular expression starts matching the string. Corresponds to .*<your_regex>'	    , default=False, action='store_true')	
 	arg_parser.add_argument('-dotast'			, type=str, help='save abstract syntax tree representation using dot format in the given file.'												, default=None)
 	arg_parser.add_argument('-dotir'		    , type=str, help='save ir representation using dot format in the given file.'																, default=None)
 	arg_parser.add_argument('-dotcode'			, type=str, help='save a code representation using dot format in the given file.'															, default=None)

@@ -1,4 +1,5 @@
 import ir_re2coprocessor
+import ir as IR
 
 def simplify_jumps_backend(instr_list):
 	#eliminate useless jumps
@@ -37,10 +38,42 @@ def simplify_jumps_backend(instr_list):
 				
 	
 	return instr_list
-	
+
+def add_jmp_if_necessary(list_ir_instr: list):
+	#children 0 are the normal prosecution of each instructions so they reaside at pc+1
+	#complex transformation may reuse some portion of the code that would be 
+	#place fairly distant from current node. 
+	#so in case of Splits that have children#0 way before/after in the depth first
+	#search add an intermediate Jump.
+	i = 0
+	while( i < len(list_ir_instr)):
+		n 		= list_ir_instr[i]
+
+		if( isinstance(n, IR.Split) and (i+1==len(list_ir_instr) or not(n.children[0] is list_ir_instr[i+1])) ):
+			
+			inject_jmp		= IR.Jmp(n.children[0])
+			n.replace( n.children[0], inject_jmp )
+			list_ir_instr.insert(i+1, inject_jmp)
+		i+=1
+	return list_ir_instr
+
 def code_gen(ir):
 		list_ir_instr = ir.getNodes()
-		list_instr    = [None for e in list_ir_instr]
+		dotcode = "test.dot"
+		if(dotcode is not None):
+			with open(dotcode, 'w', encoding="utf-8") as f:
+				dot_content = 'digraph {\n'+"".join([instr.dotty_str() for instr in list_ir_instr ])+'}'
+				f.write(dot_content)
+
+		add_jmp_if_necessary(list_ir_instr)
+
+		if(dotcode is not None):
+			with open(dotcode, 'w', encoding="utf-8") as f:
+				dot_content = 'digraph {\n'+"".join([instr.dotty_str() for instr in list_ir_instr ])+'}'
+				f.write(dot_content)
+
+
+		list_instr    = [None for _ in list_ir_instr]
 
 		for i in range(len(list_ir_instr)):
 			list_ir_instr[i]._code_gen(pc=i, list_ir_instructions=list_ir_instr, list_instructions=list_instr )
