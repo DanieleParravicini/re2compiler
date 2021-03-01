@@ -1,5 +1,7 @@
 import ir
+from copy import deepcopy
 from collections import namedtuple
+
 
 class ast_refined_node:
 	def __init__(self, *children):
@@ -125,9 +127,45 @@ class more_than_one_repetition(ast_refined_node):
 		start = lowered_children[0].start
 
 		split = ir.Split(end, start)
-		
 		lowered_children[0].end.append(split)
 		return sub_regex(start,end)
+		
+class bounded_num_repetition(ast_refined_node):
+	def __init__(self, regex_to_repeat, min_num=1, max_num=1):
+		super().__init__(regex_to_repeat)
+		self.min_num = min(min_num,max_num)
+		self.max_num = max(min_num,max_num)
+
+	def to_ir(self):
+		end = ir.PlaceholderNop()
+		lowered_children = super().to_ir()
+		assert len(lowered_children)==1
+		child = lowered_children[0]
+		start = child.start
+		
+		child_copies = [child]
+		for _ in range(self.max_num-1):
+			child_copies.append(deepcopy(child))
+
+		for i in range(self.max_num):
+			if i+1 < self.min_num:
+				child_copies[i].end.append(child_copies[i+1].start)
+			elif i != self.max_num-1:
+				split = ir.Split(child_copies[i+1].start,end)
+				child_copies[i].end.append(split)
+			else:
+				child_copies[i].end.append(end)
+
+		return sub_regex(start,end)
+
+	def __str__(self):
+		if self.min_num == self.max_num:
+			if self.min_num ==1:
+				return type(self).__name__
+			else:
+				return type(self).__name__+f'{ {self.min_num} }'
+		else:
+			return type(self).__name__+f'{ {self.min_num,self.max_num} }'
 		
 
 class optional_repetition(ast_refined_node):

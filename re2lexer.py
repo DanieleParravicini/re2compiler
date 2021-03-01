@@ -14,8 +14,12 @@ tokens = (
 'RPAR',
 'LSPAR',
 'RSPAR',
+'LCPAR',
+'RCPAR',
 'MINUS',
 'HAT',
+'COMMA',
+'NUM',
 'CHAR',
 )
 
@@ -31,7 +35,7 @@ tokens = (
 # ***For functions, the order can be explicitly controlled since rules appearing first are checked first*** "
 # THIS AVOIDS AMBIGUITY!!
 def t_ESCAPED(t):
-	r'\\[\\*+()?.\[\]\-\^]'
+	r'\\[\\*+()?.\[\]\{\}\-\^1]'
 	#Adds the possibility to escape special characters.
 	# Note that \ has to be escaped as well inside python re so \\ stands for \ 
 	# consequently the re matches a \ followed by one of the following: '\','*','+','(',')','?','.','[',']','-', or ^ .
@@ -58,6 +62,14 @@ def t_LSPAR(t):
 
 def t_RSPAR(t):
 	r'\]'
+	return t
+
+def t_LCPAR(t):
+	r'\{'
+	return t
+
+def t_RCPAR(t):
+	r'\}'
 	return t
 
 def t_MINUS(t):
@@ -92,6 +104,14 @@ def t_HEXA( t):
 	r'\\x([0-9A-Fa-f][0-9A-Fa-f])'
 	#print(t.value[2:])
 	t.value = int(t.value[2:], 16)
+	return t
+
+def t_COMMA(t):
+	r','
+	return t
+
+def t_NUM(t):
+	r'([1-9][0-9]*)|0'
 	return t
 
 def t_CHAR( t):

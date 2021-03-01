@@ -1,4 +1,3 @@
-from threading import main_thread
 import re2lexer
 import ply.yacc as yacc
 import ast_refined
@@ -41,6 +40,8 @@ def p_repetition(p):
 	'''repetition 	: subexpr TIMES 
 				  	| subexpr PLUS 
 					| subexpr OPT  
+					| subexpr LCPAR NUM RCPAR
+					| subexpr LCPAR NUM COMMA NUM RCPAR
 					| subexpr '''
 	if(len(p) >= 3):
 		if( p[2] == '*'):
@@ -49,6 +50,20 @@ def p_repetition(p):
 			p[0] = ast_refined.more_than_one_repetition(p[1])
 		elif(p[2] == '?'):
 			p[0] = ast_refined.optional_repetition(p[1])
+		elif(p[2] == '{'):
+			
+			if len(p) <= 5:
+				#case subexpr LCPAR NUM RCPAR
+				
+				n_rep = int(p[3])
+				p[0] = ast_refined.bounded_num_repetition(p[1], min_num=n_rep,max_num=n_rep)
+			else:
+				#subexpr LCPAR NUM COMMA NUM RCPAR
+				
+				n_min_rep = int(p[3])
+				n_max_rep = int(p[5])
+				p[0] = ast_refined.bounded_num_repetition(p[1], min_num=n_min_rep,max_num=n_max_rep)
+
 	else:
 		p[0] = p[1]
 		
@@ -57,6 +72,7 @@ def p_repetition(p):
 def p_subexpr(p):
 	'''subexpr 	: LPAR alternative RPAR 
 				| CHAR
+				| NUM
 				| HEXA
 				| WHITESPACE
 				| ANYCHAR
@@ -99,15 +115,21 @@ def p_subexpr(p):
 		#positive group
 		list_of_matches = [ ast_refined.match_character(c) for c in p[2]]
 		p[0] = ast_refined.alternative(*list_of_matches)
+	elif p.slice[1].type == 'NUM':
+		p[0]   = from_num_to_concat(p[1])
 	else:
-		#CHAR
+		#CHAR 
 		p[0] = ast_refined.match_character(p[1])
 
 def p_group(p):
 	''' group 	:  CHAR MINUS CHAR group
 				|  CHAR MINUS CHAR 
 				|  CHAR group
-				|  CHAR '''
+				|  CHAR 
+				|  NUM MINUS NUM group
+				|  NUM MINUS NUM 
+				|  NUM group
+				|  NUM'''
 	#group is a special subproduction that does not return an ast 
 	#but a list of int representing chars in utf-8 is responsability of
 	#other production to produce a valid ast.
@@ -120,17 +142,26 @@ def p_group(p):
 		# NOTE: char is described by means of an int
 		p[0] 			= [c for c in range(low,high+1)] 
 		if len(p) > 4:
-			# if we are in the case CHAR MINUS CHAR group
+			# if we are in the case (CHAR|NUM) MINUS (CHAR|NUM) group
 			# concatenate the list produced by the subrule group 
 			p[0] 		= p[0] + p[4]
 
-	elif p.slice[1].type == "CHAR":
+	elif p.slice[1].type in ["CHAR" , "NUM"] :
+		if p[1].slice.type == 'NUM':
+			from_num_to_concat(p[1])
 		p[0] 			= [p[1]]
 		
 		if len(p) > 2:
-			# if we are in the case CHAR group
+			# if we are in the case (CHAR|NUM) group
 			# concatenate the list produced by the subrule group 
 			p[0] 		= p[0] + p[2]
+
+def from_num_to_concat(n_string):
+	to_concat = []
+	for c in n_string:
+		to_concat.append(ast_refined.match_character(c))
+
+	return ast_refined.concatenation(*to_concat)
 
 	
 # Error rule for syntax errors
@@ -149,16 +180,32 @@ def p_error(p):
 # Build the parser
 parser	= yacc.yacc()
 
-def to_ir(data=None, full_match=False,allow_prefix=False,dotast=None):
+def to_ir(data=None, allow_postfix=True,allow_prefix=True,dotast=None):
+	#https://docs.python.org/3/library/re.html#regular-expression-syntax 
+	#^ (Caret.) Matches the start of the string, and in MULTILINE mode also 
+	# matches immediately after each newline.
+	if data[0] == '^': 
+		allow_prefix= False
+		data  		= data[1:]
+	
+	#$
+	#Matches the end of the string or just before the newline at the end of the 
+	# string, and in MULTILINE mode also matches before a newline. foo matches both 
+	# ‘foo’ and ‘foobar’, while the regular expression foo$ matches only ‘foo’. 
+	if data[-1] == '$':
+		allow_postfix  = False	
+		data  		   = data[:-1]
+
 	ast 		= parser.parse(data)
 
-	if(full_match): 	#by default regex_code accepts a string even if the part matching the regex does not end at the end of the string
+	if(not allow_postfix): 	#by default regex_code accepts a string even if the part matching the regex does not end at the end of the string
 		ast.set_accept_partial(False)
 	if(allow_prefix): 	#by default the start of the match in the string does not have to correspond with start of the string
 		ast.set_ignore_prefix(True)
 		
 	if(dotast is not None):
 		dot_file_content 	= ast.dotty_str()
+		
 		with open(dotast, 'w', encoding="utf-8") as f:
 			f.write(dot_file_content)
 
@@ -166,6 +213,13 @@ def to_ir(data=None, full_match=False,allow_prefix=False,dotast=None):
 
 if __name__ == "__main__":
 	data 		= '[^a-zA-Z]\\-'
+	ast 		= parser.parse(data)
+
+	dot_file_content 	= ast.dotty_str()
+	with open('test.dot', 'w', encoding="utf-8") as f:
+		f.write(dot_file_content)
+
+	data 		= 'r12ax\\-'
 	ast 		= parser.parse(data)
 
 	dot_file_content 	= ast.dotty_str()
