@@ -33,6 +33,7 @@ class Re2CoproInstr:
 	def code(self):
 		if ESTIMATE_CODE_SIZE and self.data > 255:
 			import warnings
+			
 			warnings.warn("this code can't be executed as it possibly exceed the bits dedicated to pc", Warning)
 		elif not ESTIMATE_CODE_SIZE:
 			assert self.data < 255

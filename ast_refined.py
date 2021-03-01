@@ -148,9 +148,12 @@ class bounded_num_repetition(ast_refined_node):
 			child_copies.append(deepcopy(child))
 
 		for i in range(self.max_num):
+			
 			if i+1 < self.min_num:
 				child_copies[i].end.append(child_copies[i+1].start)
-			elif i != self.max_num-1:
+			elif i+1 != self.max_num:
+				if i == 0 and self.min_num==0:
+					start = ir.Split(child_copies[0].start,end)
 				split = ir.Split(child_copies[i+1].start,end)
 				child_copies[i].end.append(split)
 			else:

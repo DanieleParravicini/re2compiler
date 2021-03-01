@@ -40,8 +40,6 @@ def p_repetition(p):
 	'''repetition 	: subexpr TIMES 
 				  	| subexpr PLUS 
 					| subexpr OPT  
-					| subexpr LCPAR NUM RCPAR
-					| subexpr LCPAR NUM COMMA NUM RCPAR
 					| subexpr '''
 	if(len(p) >= 3):
 		if( p[2] == '*'):
@@ -49,21 +47,7 @@ def p_repetition(p):
 		elif(p[2] == '+'):
 			p[0] = ast_refined.more_than_one_repetition(p[1])
 		elif(p[2] == '?'):
-			p[0] = ast_refined.optional_repetition(p[1])
-		elif(p[2] == '{'):
-			
-			if len(p) <= 5:
-				#case subexpr LCPAR NUM RCPAR
-				
-				n_rep = int(p[3])
-				p[0] = ast_refined.bounded_num_repetition(p[1], min_num=n_rep,max_num=n_rep)
-			else:
-				#subexpr LCPAR NUM COMMA NUM RCPAR
-				
-				n_min_rep = int(p[3])
-				n_max_rep = int(p[5])
-				p[0] = ast_refined.bounded_num_repetition(p[1], min_num=n_min_rep,max_num=n_max_rep)
-
+			p[0] = ast_refined.optional_repetition(p[1])	
 	else:
 		p[0] = p[1]
 		
@@ -71,6 +55,8 @@ def p_repetition(p):
 
 def p_subexpr(p):
 	'''subexpr 	: LPAR alternative RPAR 
+			    | alternative LCPAR NUM RCPAR
+				| alternative LCPAR NUM COMMA NUM RCPAR
 				| CHAR
 				| NUM
 				| HEXA
@@ -86,6 +72,19 @@ def p_subexpr(p):
 		# matched subexpr -> LPAR alternative RPAR so just pass up a reference to 
 		#  the other ast 
 		p[0] = p[2]
+	elif len(p) > 2 and p.slice[2].type == 'LCPAR':
+		if len(p) <= 5:
+			#case alternative LCPAR NUM RCPAR
+			
+			n_rep = int(p[3])
+			p[0] = ast_refined.bounded_num_repetition(p[1], min_num=n_rep,max_num=n_rep)
+		else:
+			#alternative LCPAR NUM COMMA NUM RCPAR
+			
+			n_min_rep = int(p[3])
+			n_max_rep = int(p[5])
+			p[0] = ast_refined.bounded_num_repetition(p[1], min_num=n_min_rep,max_num=n_max_rep)
+
 	elif p.slice[1].type == 'WHITESPACE':
 		#from https://docs.python.org/3.8/library/re.html
 		#For Unicode (str) patterns:
@@ -147,7 +146,7 @@ def p_group(p):
 			p[0] 		= p[0] + p[4]
 
 	elif p.slice[1].type in ["CHAR" , "NUM"] :
-		if p[1].slice.type == 'NUM':
+		if p.slice[1].type == 'NUM':
 			from_num_to_concat(p[1])
 		p[0] 			= [p[1]]
 		
