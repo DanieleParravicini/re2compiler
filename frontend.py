@@ -180,12 +180,12 @@ def p_error(p):
 # Build the parser
 parser	= yacc.yacc()
 
-def to_ir(data=None, allow_postfix=True,allow_prefix=True,dotast=None):
+def to_ir(data=None, no_postfix=False,no_prefix=False,dotast=None):
 	#https://docs.python.org/3/library/re.html#regular-expression-syntax 
 	#^ (Caret.) Matches the start of the string, and in MULTILINE mode also 
 	# matches immediately after each newline.
 	if data[0] == '^': 
-		allow_prefix= False
+		no_prefix	= True
 		data  		= data[1:]
 	
 	#$
@@ -193,19 +193,18 @@ def to_ir(data=None, allow_postfix=True,allow_prefix=True,dotast=None):
 	# string, and in MULTILINE mode also matches before a newline. foo matches both 
 	# ‘foo’ and ‘foobar’, while the regular expression foo$ matches only ‘foo’. 
 	if data[-1] == '$':
-		allow_postfix  = False	
-		data  		   = data[:-1]
+		no_postfix  = True	
+		data  		= data[:-1]
 
 	ast 		= parser.parse(data)
 
-	if(not allow_postfix): 	#by default regex_code accepts a string even if the part matching the regex does not end at the end of the string
-		ast.set_accept_partial(False)
-	if(allow_prefix): 	#by default the start of the match in the string does not have to correspond with start of the string
-		ast.set_ignore_prefix(True)
+	#by default regex_code accepts a string even if the part matching the regex does not end at the end of the string
+	ast.set_accept_partial(not no_postfix)
+	#by default the start of the match in the string does not have to correspond with start of the string
+	ast.set_ignore_prefix(not no_prefix)
 		
 	if(dotast is not None):
 		dot_file_content 	= ast.dotty_str()
-		
 		with open(dotast, 'w', encoding="utf-8") as f:
 			f.write(dot_file_content)
 
