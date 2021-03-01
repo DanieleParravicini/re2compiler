@@ -59,19 +59,8 @@ def add_jmp_if_necessary(list_ir_instr: list):
 
 def code_gen(ir):
 		list_ir_instr = ir.getNodes()
-		dotcode = "test.dot"
-		if(dotcode is not None):
-			with open(dotcode, 'w', encoding="utf-8") as f:
-				dot_content = 'digraph {\n'+"".join([instr.dotty_str() for instr in list_ir_instr ])+'}'
-				f.write(dot_content)
-
+		
 		add_jmp_if_necessary(list_ir_instr)
-
-		if(dotcode is not None):
-			with open(dotcode, 'w', encoding="utf-8") as f:
-				dot_content = 'digraph {\n'+"".join([instr.dotty_str() for instr in list_ir_instr ])+'}'
-				f.write(dot_content)
-
 
 		list_instr    = [None for _ in list_ir_instr]
 
