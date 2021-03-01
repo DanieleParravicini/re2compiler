@@ -108,7 +108,6 @@ def p_subexpr(p):
 		# negative group
 		list_possible_chars = [ c  for c in range(256) if c not in p[3] ]
 		list_of_matches 	= [ ast_refined.match_character(c) for c in list_possible_chars]
-		
 		p[0] = ast_refined.alternative(*list_of_matches)
 	elif p.slice[1].type == 'LSPAR':
 		#positive group
@@ -135,11 +134,18 @@ def p_group(p):
 	if  len(p) >= 4:
 		#include MINUS
 		#take high and low
+		extra = []
+		if p.slice[1].type == 'NUM':
+			
+			extra = [c.encode('utf-8')[0] for c in p[1][:-1]]+[c.encode('utf-8')[0] for c in p[3][1:]]
+			p[1]  = (p[1][-1].encode('utf-8')[0])
+			p[3]  = (p[3][0].encode('utf-8')[0] )
 		low  			= min(p[1], p[3])
 		high 			= max(p[1], p[3])
 		#produce a list of chars ranging from low to high (included)
 		# NOTE: char is described by means of an int
-		p[0] 			= [c for c in range(low,high+1)] 
+		p[0] 			= [c for c in range(low,high+1)] + extra
+
 		if len(p) > 4:
 			# if we are in the case (CHAR|NUM) MINUS (CHAR|NUM) group
 			# concatenate the list produced by the subrule group 
@@ -147,8 +153,9 @@ def p_group(p):
 
 	elif p.slice[1].type in ["CHAR" , "NUM"] :
 		if p.slice[1].type == 'NUM':
-			from_num_to_concat(p[1])
-		p[0] 			= [p[1]]
+			p[0]			= [c for c in p[1]]
+		else:
+			p[0] 			= [p[1]]
 		
 		if len(p) > 2:
 			# if we are in the case (CHAR|NUM) group
