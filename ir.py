@@ -182,6 +182,24 @@ class Match(IrInstr):
 	def equiv(self, other):
 		return super().equiv(other) and self.char == other.char
 
+class NotMatch(IrInstr):
+	def __init__(self, achar):
+		super().__init__()
+		if isinstance(achar, str):
+			self.char = bytes(achar, 'utf-8')[0]
+		else:
+			self.char = achar
+		
+	def dotty_repr(self):
+		# printable Ascii \x20-\x7F
+		char = chr(self.char)
+		if self.char < 32 or self.char > 127  or char == "\"\\":
+			char = hex(self.char)
+		return f"{id(self)} [label =\"^{char}\" color=\"black\" fillcolor=\"#ffa822\" style=\"filled\"]\n"
+
+	def equiv(self, other):
+		return super().equiv(other) and self.char == other.char
+
 class Match_any(IrInstr):
 	def __init__(self, *children):
 		super().__init__(*children)

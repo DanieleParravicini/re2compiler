@@ -25,6 +25,13 @@ def Match(self,  pc, list_ir_instructions: list,  list_instructions: list):
 
 		anInstr = ir_re2coprocessor.Match(pc,self.char)
 		list_instructions[pc] = anInstr
+
+def NotMatch(self,  pc, list_ir_instructions: list,  list_instructions: list):
+		next_pc = list_ir_instructions.index(self.children[0])
+		assert pc +1 == next_pc, str(pc+1)+ " !== "+ str(next_pc)
+
+		anInstr = ir_re2coprocessor.NotMatch(pc,self.char)
+		list_instructions[pc] = anInstr
 		
 def Match_any(self,  pc, list_ir_instructions: list,  list_instructions: list):
 		next_pc = list_ir_instructions.index(self.children[0])

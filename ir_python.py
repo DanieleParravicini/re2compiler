@@ -125,6 +125,27 @@ class Match(PythonInstr):
 	def __str__(self):
 		c = chr(self.char)
 		return f"PC {self.pc} MATCH {c} "
+
+class NotMatch(PythonInstr):
+	def __init__(self, pc, achar, child):
+		super().__init__(pc, child)
+		if isinstance( achar, str):
+			self.char = bytes(achar, 'utf-8')[0]
+		else:
+			self.char = achar
+		
+	def dotty_repr(self):
+		return f"{id(self)} [label =\"^{chr(self.char)}\" color=\"black\" fillcolor=\"#ffa822\" style=\"filled\"]\n"
+
+	def execute(self, string, cur_char_index ):
+		if string[cur_char_index].encode('utf-8')[0] != self.char :
+			return [Continuation(self.children[0], string, cur_char_index)]  
+		else : 
+			return []
+	
+	def __str__(self):
+		c = chr(self.char)
+		return f"PC {self.pc} NOT MATCH {c} "
 	
 class Match_any(PythonInstr):
 	def __init__(self, pc, *children):
@@ -145,7 +166,6 @@ class Match_any(PythonInstr):
 	def __str__(self):
 		return f"PC {self.pc} MATCH ANY "
 	
-
 class Jmp(PythonInstr):
 	def __init__(self, pc, next):
 		super().__init__(pc, next)

@@ -48,12 +48,6 @@ class ast_refined_node:
 		return type(self).__name__
 
 sub_regex = namedtuple('sub_regex', ['start', 'end'])
-class any_char(ast_refined_node):
-	def __init__(self, *others):
-		super().__init__(*others)
-	
-	def to_ir(self):
-		raise NotImplementedError()
 
 class alternative(ast_refined_node):
 	def __init__(self, *others):
@@ -83,6 +77,25 @@ class alternative(ast_refined_node):
 			lowered_children.append(sub_regex(split,None))
 		
 		start  = lowered_children[0].start
+
+		return sub_regex(start,end)
+
+class sequence(ast_refined_node):
+	def __init__(self, *others):
+		super().__init__(*others)
+
+	def append(self,other):
+		self.children += [other]
+	
+	def to_ir(self):
+		
+		lowered_children = super().to_ir()
+		
+		start  = lowered_children[0].start
+		end    = lowered_children[0].end
+		for c in lowered_children[1:]:
+			end.append(c.start)
+			end = c.end
 
 		return sub_regex(start,end)
 		
@@ -202,6 +215,26 @@ class match_character(ast_refined_node):
 
 	def to_ir(self):
 		x= ir.Match(self.character)
+		return sub_regex(x,x)
+
+class match_negative_character(ast_refined_node):
+	def __init__(self, character):
+		super().__init__()
+
+		if isinstance(character, str):
+			self.character = bytes(character, 'utf-8')[0]
+		else:
+			self.character = character
+	
+	def dotty_str(self):
+		# printable Ascii \x20-\x7F
+		char = chr(self.character)
+		if self.character < 32 or self.character > 127 or char in "\"\\":
+			char = hex(self.character)
+		return f" {id(self)} [label=\"^{char}\"]"
+
+	def to_ir(self):
+		x= ir.NotMatch(self.character)
 		return sub_regex(x,x)
 
 class any_character(ast_refined_node):

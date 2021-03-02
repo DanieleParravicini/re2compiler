@@ -11,6 +11,7 @@ class Re2CoproInstr_type(Enum):
 	END_WITHOUT_ACCEPTING = 4
 	MATCH_ANY 		      = 5
 	ACCEPT_PARTIAL	      = 6
+	NOT_MATCH		      = 7
 
 class Re2CoproInstr:
 	def __init__(self, pc, instr_type, data):
@@ -71,6 +72,14 @@ class Match(Re2CoproInstr):
 		return (f"{self.pc} -> {self.pc+1}\n"+
 				f"{self.pc} [label =\"{self.pc} : {self.data}\" color=\"black\" fillcolor=\"#ffa822\" style=\"filled\"]\n"             )
 
+class NotMatch(Re2CoproInstr):
+	def __init__(self, pc, char):
+		super().__init__(pc, Re2CoproInstr_type.NOT_MATCH, char)
+		
+	def dotty_str(self):
+		return (f"{self.pc} -> {self.pc+1}\n"+
+				f"{self.pc} [label =\"^{self.pc} : {self.data}\" color=\"black\" fillcolor=\"#ffa822\" style=\"filled\"]\n"             )
+	
 class Match_any(Re2CoproInstr):
 	def __init__(self,pc):
 		super().__init__(pc, Re2CoproInstr_type.MATCH_ANY, 0)

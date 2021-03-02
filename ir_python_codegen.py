@@ -26,6 +26,10 @@ def Match_any(self, pc):
 def Jmp(self, pc):
 	child = self.children[0]
 	return ir_python.Jmp(pc, child)
+
+def NotMatch(self, pc):
+	child = self.children[0]
+	return ir_python.NotMatch(pc, self.char, child)
 		
 def End_Without_Accepting(self, pc):
 	return ir_python.End_Without_Accepting(pc)

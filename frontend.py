@@ -106,9 +106,18 @@ def p_subexpr(p):
 		p[0] = ast_refined.any_character()
 	elif p.slice[1].type == 'LSPAR' and p.slice[2].type == 'HAT' :
 		# negative group
-		list_possible_chars = [ c  for c in range(256) if c not in p[3] ]
-		list_of_matches 	= [ ast_refined.match_character(c) for c in list_possible_chars]
-		p[0] = ast_refined.alternative(*list_of_matches)
+		MAX_SEQUENTIAL_TEST_FOR_PARALLEL_MATCH = 64
+		
+		if (256-len(p[3])) < MAX_SEQUENTIAL_TEST_FOR_PARALLEL_MATCH: 
+			list_possible_chars = [ c  for c in range(256) if c not in p[3] ]
+			list_of_matches 	= [ ast_refined.match_character(c) for c in list_possible_chars]
+		
+			p[0] = ast_refined.alternative(*list_of_matches)
+		else:
+			list_of_matches 	= [ ast_refined.match_negative_character(c) for c in p[3]]
+			list_of_matches.append(ast_refined.any_character())
+			p[0] = ast_refined.sequence(*list_of_matches)
+
 	elif p.slice[1].type == 'LSPAR':
 		#positive group
 		list_of_matches = [ ast_refined.match_character(c) for c in p[2]]
@@ -181,7 +190,7 @@ def p_error(p):
           #raise Exception(p)
 	else:
           print("Syntax error at EOF")
-	exit(-1)
+	raise Exception("Syntax error")
 
 # Build the parser
 parser	= yacc.yacc()
