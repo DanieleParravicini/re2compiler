@@ -1,7 +1,10 @@
 from enum import Enum
 
 #if you want to estimate code size without actually run this code on CICERO
-ESTIMATE_CODE_SIZE = True
+ESTIMATE_CODE_SIZE 		= True
+BITS_DEDICATED_TO_TYPE 	= 3
+BITS_DEDICATED_TO_I		= 16
+MAX_CODE_SIZE 			= 512
 
 class Re2CoproInstr_type(Enum):
 	ACCEPT 			      = 0
@@ -13,11 +16,23 @@ class Re2CoproInstr_type(Enum):
 	ACCEPT_PARTIAL	      = 6
 	NOT_MATCH		      = 7
 
+for	symbol in Re2CoproInstr_type:
+	if symbol.value >= 2**BITS_DEDICATED_TO_TYPE:
+		raise Exception("Not enough bits to represent the instructions") 
+
 class Re2CoproInstr:
 	def __init__(self, pc, instr_type, data):
 		self.pc   = pc
 		self.type = instr_type
 		self.data = data
+
+		if ESTIMATE_CODE_SIZE and self.data > MAX_CODE_SIZE or self.pc   > MAX_CODE_SIZE:
+			import warnings
+			
+			warnings.warn("this code can't be executed as it possibly exceed the bits dedicated to pc", Warning)
+		elif not ESTIMATE_CODE_SIZE:
+			assert self.data < MAX_CODE_SIZE
+			assert self.pc   < MAX_CODE_SIZE
 
 	def set_pc(self,aPc):
 		self.pc = aPc
@@ -32,13 +47,9 @@ class Re2CoproInstr:
 		return f"{id(self)} [label=\"unknown\" color=\"black\"  fillcolor=\"gray\"	style=\"filled\" ]\n"
 
 	def code(self):
-		if ESTIMATE_CODE_SIZE and self.data > 255:
-			import warnings
-			
-			warnings.warn("this code can't be executed as it possibly exceed the bits dedicated to pc", Warning)
-		elif not ESTIMATE_CODE_SIZE:
-			assert self.data < 255
-		return f"{self.type.value} ; {self.data}\n"
+		payload =(self.type.value*(2**(BITS_DEDICATED_TO_I-BITS_DEDICATED_TO_TYPE))+self.data)
+
+		return f"{hex(payload)}\n"
 
 class Accept(Re2CoproInstr):
 	def __init__(self, pc):

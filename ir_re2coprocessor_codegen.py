@@ -9,7 +9,6 @@ def Accept_Partial(self, pc, list_ir_instructions: list,  list_instructions: lis
 		list_instructions[pc] = anInstr
 
 def Split(self,  pc, list_ir_instructions: list,  list_instructions: list):
-		
 		target_split_0_pc = list_ir_instructions.index(self.children[0])
 		target_split_1_pc = list_ir_instructions.index(self.children[1])
 		if target_split_0_pc == pc+1:
