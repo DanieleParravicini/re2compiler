@@ -7,22 +7,21 @@ import warnings
 verbose = False
 ok = 0
 total = 0
-path = "protomata.regex"
+path = "snort.regex"
 if not os.path.exists(path):
-    with urllib.request.urlopen("https://raw.githubusercontent.com/tjt7a/AutomataZoo/master/Protomata/code/protomata.regex") as response:
+    with urllib.request.urlopen("https://raw.githubusercontent.com/jackwadden/ANMLZoo/master/Snort/regex/snort.1chip.regex") as response:
         html = response.read()
         with open(path,'w') as f:
             f.write(html.decode('utf-8'))
 
 with open(path) as f:
     for i,line in enumerate(f.readlines()):
-        #remove \( and )\
-        line = line[2:-3]
+        
         if verbose:
             print(f'regex {i+1}',flush=True)
             warnings.simplefilter('once')
         try:
-            code        = compile(data=line, no_postfix=False, no_prefix=False, O1=True)
+            code        = compile(data=line, no_postfix=False, no_prefix=False, O1=True, frontend="pcre") 
             num_instr   = len(code.split("\n"))
             if num_instr<512:
                 ok+=1

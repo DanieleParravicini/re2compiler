@@ -1,7 +1,6 @@
 #! python re2compiler.py -d="a(b|c)*" 
 import importlib 
 import config
-import frontend
 import optimization
 
 def save_dotty(fout):
@@ -13,10 +12,11 @@ def save_dotty(fout):
 def compile(inputfile=None,data=None, o=None, 
 			dotast=None, dotir=None, dotcode=None, 
 			O1=None, no_postfix=False, no_prefix=False,
-			backend="re2coprocessor"):
+			backend="re2coprocessor", frontend="pythonre"):
 	
-	#programmatically import compiler backend
-	backend = importlib.import_module("backend_"+backend)
+	#programmatically import compiler frontend and backend
+	frontend = importlib.import_module("frontend_"+frontend)
+	backend  = importlib.import_module("backend_"+backend)
 	
 	if inputfile :
 		with open(inputfile,'r') as f:
@@ -70,7 +70,8 @@ if __name__ == "__main__":
 	arg_parser.add_argument('-dotcode'			, type=str, help='save a code representation using dot format in the given file.'															, default=None)
 	arg_parser.add_argument('-o'			    , type=str, help='output file containing the code that represent the regular expression.'													, default='a.out', nargs='?')
 	arg_parser.add_argument('-O1'			    , 			help='perform simple optimizations'																								, default=False, action='store_true')
-	arg_parser.add_argument('-backend'			, type=str, help='request to use a certain compiler backend. Default=re2coprocessor'														, default=config.backend)
+	arg_parser.add_argument('-backend'			, type=str, help=f'request to use a certain compiler backend. Default={config.backend}'														, default=config.backend)
+	arg_parser.add_argument('-frontend'			, type=str, help=f'request to use a certain compiler backfrontend. Default={config.frontend}'												, default=config.frontend)
 	
 	args = arg_parser.parse_args()
 	

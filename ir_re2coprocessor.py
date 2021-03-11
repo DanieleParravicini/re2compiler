@@ -1,7 +1,7 @@
 from enum import Enum
 
 #if you want to estimate code size without actually run this code on CICERO
-ESTIMATE_CODE_SIZE 		= True
+ESTIMATE_CODE_SIZE 		= False
 BITS_DEDICATED_TO_TYPE 	= 3
 BITS_DEDICATED_TO_I		= 16
 MAX_CODE_SIZE 			= 512
