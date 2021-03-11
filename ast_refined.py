@@ -80,7 +80,7 @@ class alternative(ast_refined_node):
 
 		return sub_regex(start,end)
 
-class sequence(ast_refined_node):
+class none_of(ast_refined_node):
 	def __init__(self, *others):
 		super().__init__(*others)
 
@@ -97,8 +97,12 @@ class sequence(ast_refined_node):
 			end.append(c.start)
 			end = c.end
 
+		conclude_matching_any = ir.Match_any()
+		end.append(conclude_matching_any)
+		end = conclude_matching_any
+
 		return sub_regex(start,end)
-		
+	
 class concatenation(ast_refined_node):
 	def __init__(self, *others):
 		super().__init__(*others)
@@ -182,6 +186,41 @@ class bounded_num_repetition(ast_refined_node):
 				return type(self).__name__+f'{ {self.min_num} }'
 		else:
 			return type(self).__name__+f'{ {self.min_num,self.max_num} }'
+
+class min_bounded_num_repetition(ast_refined_node):
+	def __init__(self, regex_to_repeat, min_num=1):
+		super().__init__(regex_to_repeat)
+		self.min_num = min_num
+		assert(min_num > 0)
+
+	def to_ir(self):
+		end = ir.PlaceholderNop()
+		lowered_children = super().to_ir()
+		assert len(lowered_children)==1
+		child = lowered_children[0]
+		start = child.start
+		
+		child_copies = [child]
+		for _ in range(self.min_num):
+			child_copies.append(deepcopy(child))
+
+		for count in range(self.min_num-1):
+			child_copies[count].end.append(child_copies[count+1].start)
+		
+			
+		split = ir.Split(child_copies[self.min_num].start,end)
+		child_copies[self.min_num].end.append(ir.Jmp(split))
+		
+		child_copies[self.min_num-1].end.append(split)
+
+		return sub_regex(start,end)
+
+	def __str__(self):
+		
+		if self.min_num ==1:
+			return type(self).__name__
+		else:
+			return type(self).__name__+f'{ {self.min_num} }'
 		
 
 class optional_repetition(ast_refined_node):
@@ -209,7 +248,9 @@ class match_character(ast_refined_node):
 	def dotty_str(self):
 		# printable Ascii \x20-\x7F
 		char = chr(self.character)
-		if self.character < 32 or self.character > 127 or char in "\"\\":
+		if self.character == 32:
+			char = "SPACE"
+		elif self.character < 32 or self.character > 127 or char in "\"\\":
 			char = hex(self.character)
 		return f" {id(self)} [label=\"{char}\"]"
 
@@ -229,7 +270,9 @@ class match_negative_character(ast_refined_node):
 	def dotty_str(self):
 		# printable Ascii \x20-\x7F
 		char = chr(self.character)
-		if self.character < 32 or self.character > 127 or char in "\"\\":
+		if self.character == 32:
+			char = "SPACE"
+		elif self.character < 32 or self.character > 127 or char in "\"\\":
 			char = hex(self.character)
 		return f" {id(self)} [label=\"^{char}\"]"
 
@@ -246,6 +289,17 @@ class any_character(ast_refined_node):
 
 	def to_ir(self):
 		x= ir.Match_any()
+		return sub_regex(x,x)
+	
+class end_of_string(ast_refined_node):
+	def __init__(self):
+		super().__init__()
+	
+	def dotty_str(self):
+		return f" {id(self)} [label=\"end of string\"]"
+
+	def to_ir(self):
+		x= ir.Accept()
 		return sub_regex(x,x)
 
 
@@ -285,4 +339,13 @@ class whole_regexp(ast_refined_node):
 
 		return start
 	
-		 
+class epsilon_move(ast_refined_node):
+	def __init__(self):
+		super().__init__()
+	
+	def dotty_str(self):
+		return f" {id(self)} [label=\"ε\"]"
+
+	def to_ir(self):
+		x= ir.PlaceholderNop()
+		return sub_regex(x,x)

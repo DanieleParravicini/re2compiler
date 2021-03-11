@@ -141,6 +141,10 @@ class Accept(IrInstr):
 	def dotty_repr(self):
 		return f"{id(self)} [label=\"\\\\00 => ✓\" color=\"black\"  fillcolor=\"#1ac0c6\"	style=\"filled\"]\n"
 
+	def append(self, *other):
+		#no instruction should be appended to an Accept
+		pass
+
 
 class Accept_Partial(IrInstr):
 	def __init__(self):
@@ -149,6 +153,9 @@ class Accept_Partial(IrInstr):
 	def dotty_repr(self):
 		return f"{id(self)} [label=\"✓\" color=\"black\"  fillcolor=\"#1ac0c6\"	style=\"filled\"]\n"
 
+	def append(self, *other):
+		#no instruction should be appended to an Accept partial
+		pass
 
 class Split(IrInstr):
 	def __init__(self, *children):
@@ -223,6 +230,11 @@ class End_Without_Accepting(IrInstr):
 
 	def dotty_repr(self):
 		return f" {id(self)} [label =\"✗\" color=\"black\" fillcolor=\"#ff6150\"	style=\"filled\"]\n"
+
+	def append(self, *other):
+		#no instruction should be appended to an End_Without_Accepting
+		pass
+
 
 class PlaceholderNop(IrInstr):
 	def __init__(self):

@@ -4,7 +4,19 @@ import ply.lex as lex
 tokens = (
 'ANYCHAR',
 'WHITESPACE',
+'WHITESPACE_COMPLEMENTED',
+'DIGIT',
+'DIGIT_COMPLEMENTED',
+'ALPHANUMERIC',
+'ALPHANUMERIC_COMPLEMENTED',
 'ESCAPED',
+'BEL',
+'ESC',
+'F_FEED',
+'L_FEED',
+'CARRIAGE_RET',
+'TAB',
+'DOLLAR',
 'HEXA',
 'PLUS',
 'TIMES',
@@ -22,6 +34,21 @@ tokens = (
 'NUM',
 'CHAR',
 )
+def t_DIGIT(t):
+	r'\\d'
+	return t
+
+def t_DIGIT_COMPLEMENTED(t):
+	r'\\D'
+	return t
+
+def t_ALPHANUMERIC(t):
+	r'\\w'
+	return t
+
+def t_ALPHANUMERIC_COMPLEMENTED(t):
+	r'\\W'
+	return t
 
 # Regular expression rules for simple tokens
 # From docs: " When building the master regular expression, rules are added in the following order:
@@ -44,8 +71,58 @@ def t_ESCAPED(t):
 	t.value = t.value[1:]
 	return t
 
+def t_BEL(t):
+	r'\\a' # BEL
+	t.type 	= 'HEXA'
+	t.value = 7
+	return t
+
+def t_ESC(t):
+	r'\\e' # ESCAPE
+	t.type 	= 'HEXA'
+	t.value = 27
+	return t
+
+def t_F_FEED(t):
+	r'\\f' #FORM FEED
+	t.type 	= 'HEXA'
+	t.value = 12
+	return t
+
+def t_L_FEED(t):
+	r'\\n' #LINE FEED
+	t.type 	= 'HEXA'
+	t.value = 10
+	return t
+
+def t_CARRIAGE_RET(t):
+	r'\\r' #CARRIAGE RETURN
+	t.type 	= 'HEXA'
+	t.value = 14
+	return t
+
+def t_TAB(t):
+	r'\\t' #TAB 
+	t.type 	= 'HEXA'
+	t.value = 9
+	return t
+
+def t_VERITCAL_TAB(t):
+	r'\\v' #VERTICAL TAB 
+	t.type 	= 'HEXA'
+	t.value = 9
+	return t
+
+def t_DOLLAR(t):
+	r'\$'
+	return t
+
 def t_WHITESPACE(t):
 	r'\\s'
+	return t
+
+def t_WHITESPACE_COMPLEMENTED(t):
+	r'\\S'
 	return t
 
 def t_LPAR(t):
@@ -101,9 +178,12 @@ def t_TIMES(t):
 	return t
 
 def t_HEXA( t):
-	r'\\x([0-9A-Fa-f][0-9A-Fa-f])'
+	r'\\x([0-9A-Fa-f][0-9A-Fa-f])?'
 	#print(t.value[2:])
-	t.value = int(t.value[2:], 16)
+	if len(t.value) == 2:
+		t.value = 0
+	else :
+		t.value = int(t.value[2:], 16)
 	return t
 
 def t_COMMA(t):
