@@ -67,10 +67,10 @@ class Accept(PythonInstr):
 		super().__init__(pc)
 
 	def dotty_repr(self):
-		return f"{id(self)} [label=\"\\\\00 => ✓\" color=\"black\"  fillcolor=\"#1ac0c6\"	style=\"filled\"]\n"
+		return f"{id(self)} [label=\"{self.pc} : \\\\00 => ✓\" color=\"black\"  fillcolor=\"#1ac0c6\"	style=\"filled\"]\n"
 
 	def execute(self, string, cur_char_index ):
-		if(string[cur_char_index] == '\0'):
+		if(len(string)-1 == cur_char_index):
 			return [Accepted]
 		else:
 			return []
@@ -83,7 +83,7 @@ class Accept_Partial(PythonInstr):
 		super().__init__(pc)
 
 	def dotty_repr(self):
-		return f"{id(self)} [label=\"✓\" color=\"black\"  fillcolor=\"#1ac0c6\"	style=\"filled\"]\n"
+		return f"{id(self)} [label=\"{self.pc} : ✓\" color=\"black\"  fillcolor=\"#1ac0c6\"	style=\"filled\"]\n"
 
 	def execute(self, string, cur_char_index ):
 		return [Accepted]
@@ -96,7 +96,7 @@ class Split(PythonInstr):
 		super().__init__(pc,*children)
 
 	def dotty_repr(self):
-		return f"{id(self)} [label=\"SPLIT\" color=\"black\" fillcolor=\"#dee0e6\" style=\"filled\"]\n"
+		return f"{id(self)} [label=\"{self.pc} : SPLIT\" color=\"black\" fillcolor=\"#dee0e6\" style=\"filled\"]\n"
 	
 	def execute(self, string, cur_char_index ):
 		return [Continuation(self.children[0], string, cur_char_index), 
@@ -109,15 +109,15 @@ class Match(PythonInstr):
 	def __init__(self, pc, achar, child):
 		super().__init__(pc, child)
 		if isinstance( achar, str):
-			self.char = bytes(achar, 'utf-8')[0]
+			self.char = bytes(achar, 'utf-8', 'ignore')[0]
 		else:
 			self.char = achar
 		
 	def dotty_repr(self):
-		return f"{id(self)} [label =\"{chr(self.char)}\" color=\"black\" fillcolor=\"#ffa822\" style=\"filled\"]\n"
+		return f"{id(self)} [label =\"{self.pc} : {chr(self.char)}\" color=\"black\" fillcolor=\"#ffa822\" style=\"filled\"]\n"
 
 	def execute(self, string, cur_char_index ):
-		if string[cur_char_index].encode('utf-8')[0] == self.char and (cur_char_index + 1) < len(string):
+		if cur_char_index < len(string) and string[cur_char_index] == self.char :
 			return [Continuation(self.children[0], string, cur_char_index+1)]  
 		else : 
 			return []
@@ -130,15 +130,15 @@ class NotMatch(PythonInstr):
 	def __init__(self, pc, achar, child):
 		super().__init__(pc, child)
 		if isinstance( achar, str):
-			self.char = bytes(achar, 'utf-8')[0]
+			self.char = bytes(achar, 'utf-8', 'ignore')[0]
 		else:
 			self.char = achar
 		
 	def dotty_repr(self):
-		return f"{id(self)} [label =\"^{chr(self.char)}\" color=\"black\" fillcolor=\"#ffa822\" style=\"filled\"]\n"
+		return f"{id(self)} [label =\"{self.pc} : ^{chr(self.char)}\" color=\"black\" fillcolor=\"#ffa822\" style=\"filled\"]\n"
 
 	def execute(self, string, cur_char_index ):
-		if string[cur_char_index].encode('utf-8')[0] != self.char :
+		if cur_char_index < len(string) and string[cur_char_index] != self.char :
 			return [Continuation(self.children[0], string, cur_char_index)]  
 		else : 
 			return []
@@ -155,10 +155,10 @@ class Match_any(PythonInstr):
 		return [self.children[0]]
 		
 	def dotty_repr(self):
-		return f"{id(self)} [label =\"\\.\" color=\"black\" fillcolor=\"#ffa822\" style=\"filled\"]\n"
+		return f"{id(self)} [label =\"{self.pc} : \\.\" color=\"black\" fillcolor=\"#ffa822\" style=\"filled\"]\n"
 
 	def execute(self, string, cur_char_index ):
-		if (cur_char_index + 1) < len(string):
+		if cur_char_index < len(string):
 			return [Continuation(self.children[0], string, cur_char_index+1)]
 		else:
 			return []
@@ -171,7 +171,7 @@ class Jmp(PythonInstr):
 		super().__init__(pc, next)
 	
 	def dotty_repr(self):
-		return f"{id(self)} [label=\"JMP\" color=\"black\" fillcolor=\"#2792ce\" style=\"filled\"]\n"
+		return f"{id(self)} [label=\"{self.pc} : JMP\" color=\"black\" fillcolor=\"#2792ce\" style=\"filled\"]\n"
 
 	def execute(self, string, cur_char_index ):
 		return [Continuation(self.children[0],string,cur_char_index)]
@@ -184,7 +184,7 @@ class End_Without_Accepting(PythonInstr):
 		super().__init__(pc)
 
 	def dotty_repr(self):
-		return f" {id(self)} [label =\"✗\" color=\"black\" fillcolor=\"#ff6150\"	style=\"filled\"]\n"
+		return f" {id(self)} [label =\"{self.pc} : ✗\" color=\"black\" fillcolor=\"#ff6150\"	style=\"filled\"]\n"
 
 	def execute(self, string, cur_char_index ):
 		return []
@@ -197,7 +197,7 @@ class PlaceholderNop(PythonInstr):
 		super().__init__(pc, child)
 
 	def dotty_repr(self):
-		return f" {id(self)} [label =\"Nop\" color=\"black\" fillcolor=\"white\"	style=\"filled\"]\n"
+		return f" {id(self)} [label =\"{self.pc} : Nop\" color=\"black\" fillcolor=\"white\"	style=\"filled\"]\n"
 
 	def execute(self, string, cur_char_index ):
 		return [Continuation(self.children[0], string, cur_char_index)]
@@ -215,10 +215,10 @@ class Continuation:
 		return self.instr.execute(self.string, self.cur_char_index)
 
 	def __str__(self):
-		first   = self.string[:self.cur_char_index]
-		curr    = self.string[self.cur_char_index]
-		last    = self.string[self.cur_char_index+1:] if self.cur_char_index+1 < len(self.string) else ""
-		return f'@ {first}[{curr}]{last} : {self.instr}'
+		old_chars   = self.string[:self.cur_char_index]
+		cur_char    = bytes([self.string[self.cur_char_index]])
+		next_chars  = self.string[self.cur_char_index+1:] if self.cur_char_index+1 < len(self.string) else ""
+		return f'@ {old_chars}[{cur_char}]{next_chars} : {self.instr}'
 
 	def __repr__(self):
 		return self.__str__()

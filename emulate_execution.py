@@ -17,7 +17,7 @@ def move_exe_res_in_list_instr_per_char(cur_res_exec, list_instr_per_char, debug
 	if debug:
 		print('num char in flight',num_char_in_flight)
 		for instr in cur_res_exec:
-				print('instr:', instr,' -> ',instr.cur_char_index % num_char_in_flight)
+				print('instr:', instr,' moved to list ',instr.cur_char_index % num_char_in_flight)
 		
 	for i in range(num_char_in_flight):
 
@@ -37,7 +37,9 @@ def peek_up_to_n_from_list_instr_per_char(cur_char, list_instr_per_char, n, debu
 	return peek_up_to_n(chain(* list_that_be_executed ), n)
 
 def _run(code, string, debug=False ):
-	string_null_ter         = string +'\0'
+	if not isinstance(string,bytes):
+		string = bytes(string,'utf-8','ignore')
+	string_null_ter         = string +b'\0'
 	cur_res_exec            = list(code.execute(string_null_ter, cur_char_index=0))
 	cur_char                = 0
 	n_core                  = 2
@@ -49,7 +51,7 @@ def _run(code, string, debug=False ):
 	#n_core set the number of execution unit available at each clock cycle.
 	#cc keeps track of the number of elapsed clock cycles.
 	if(debug):
-		print(f'@ 0 [@ [{ string[0]}]' , string[1:] if len(string)>1 else "", code)
+		print(f'@ 0 [@ [{ bytes([string[0]])}]' , string[1:] if len(string)>1 else "",' ran: ',  code)
 		print('@',cc,' added :',cur_res_exec )
 
 	num_char_in_flight      = 2
@@ -78,7 +80,7 @@ def _run(code, string, debug=False ):
 		instruction_issued += len(cur_res_exec)
 
 		if debug:
-			print('@', cc, 'elem executed', elem_to_be_executed)
+			print('@', cc, 'ran: ', elem_to_be_executed)
 			print('@', cc, 'added :',cur_res_exec )
 			input()
 
@@ -87,7 +89,9 @@ def _run(code, string, debug=False ):
 	return res,cc
 
 def _run_asap(code, string, debug=False ):
-	string_null_ter= string +'\0'
+	if not isinstance(string,bytes):
+		string = bytes(string,'utf-8','ignore')
+	string_null_ter= string +b'\0'
 	list_execution = code.execute(string_null_ter, cur_char_index=0)
 	cur_res_exec   = list_execution
 	#list_execution is a generator it contains execution point up to 
@@ -104,7 +108,7 @@ def _run_asap(code, string, debug=False ):
 	#n_core set the number of execution unit available at each clock cycle.
 	#cc keeps track of the number of elapsed clock cycles.
 	if(debug):
-		print(f'@ 0 [@ [{ string[0]}]' , string[1:] if len(string)>1 else "", code)
+		print(f'@ 0 [@ [{ bytes([string[0]])}]' , string[1:] if len(string)>1 else ""," ran: ", code)
 		print('@',cc,' added :',cur_res_exec )
 	elem_to_be_executed = list(peek_up_to_n(list_execution, n_core))
 	while( elem_to_be_executed and ir_python.Accepted not in cur_res_exec ):
@@ -121,6 +125,7 @@ def _run_asap(code, string, debug=False ):
 		#peek elems for next iteration
 		elem_to_be_executed = list(peek_up_to_n(list_execution, n_core))
 		if debug:
+			print('@',cc,' run :'  ,elem_to_be_executed )
 			print('@',cc,' added :',cur_res_exec )
 
 
@@ -270,19 +275,19 @@ if __name__ == "__main__":
 	#res,cc  = compile_and_run_asap(regex, string, no_prefix=True,
 	#              no_postfix=False, double_check=double_check, debug=True )
 	#print('cc taken', cc)
-	#exit()
 
+	
 	regex   = "(a(b|c|d)e*)+"
 	#test acceptance full
 	string  = "abacad"
-	res,cc     = compile_and_run(regex, string, no_prefix=True,
+	res,cc     = compile_and_run_asap(regex, string, no_prefix=True,
 				  no_postfix=True, double_check=double_check, debug=debug )
 	assert res
 	print('cc taken', cc)
 	input("passed")
 	#test acceptance no_prefix
 	string  = "abacadzzz"
-	res,cc  = compile_and_run(regex, string, no_prefix=True,
+	res,cc  = compile_and_run_asap(regex, string, no_prefix=True,
 				  no_postfix=False, double_check=double_check, debug=debug )   
 	assert res  
 	print('cc taken', cc)
@@ -290,7 +295,7 @@ if __name__ == "__main__":
 
 	#test acceptance prefix
 	string  = "zzzzabacad"
-	res,cc  = compile_and_run(regex, string, no_prefix=False,
+	res,cc  = compile_and_run_asap(regex, string, no_prefix=False,
 				  no_postfix=True, double_check=double_check, debug=debug )
 	
 	print('cc taken', cc)
@@ -298,7 +303,7 @@ if __name__ == "__main__":
 
 	#test acceptance prefix, suffix
 	string  = "zzzzabacadzzzzzz"
-	res,cc  = compile_and_run(regex, string, no_prefix=False,
+	res,cc  = compile_and_run_asap(regex, string, no_prefix=False,
 				  no_postfix=False, double_check=double_check, debug=debug )
 	assert res  
 	print('cc taken', cc)
@@ -306,7 +311,7 @@ if __name__ == "__main__":
 
 	#test no-acceptance full
 	string  = "abacadzzzz"
-	res, cc = compile_and_run(regex, string, no_prefix=True,
+	res, cc = compile_and_run_asap(regex, string, no_prefix=True,
 				  no_postfix=True, double_check=double_check, debug=debug )
 	assert not res  
 	print('cc taken', cc)
@@ -314,7 +319,7 @@ if __name__ == "__main__":
 
 	#test no-acceptance no_prefix
 	string  = "azzzzacad"
-	res, cc = compile_and_run(regex, string, no_prefix=True,
+	res, cc = compile_and_run_asap(regex, string, no_prefix=True,
 				  no_postfix=False, double_check=double_check, debug=debug )
 	assert not res  
 	print('cc taken', cc)
@@ -322,7 +327,7 @@ if __name__ == "__main__":
 
 	#test no-acceptance prefix
 	string  = "azzzzbazcazdzzzzz"
-	res,cc  = compile_and_run(regex, string, no_prefix=False,
+	res,cc  = compile_and_run_asap(regex, string, no_prefix=False,
 				  no_postfix=False, double_check=double_check, debug=debug )
 	assert not res  
 	print('cc taken', cc)
