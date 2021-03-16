@@ -61,13 +61,13 @@ def p_concatenation(p):
 		p[0] = p[1]
 
 def p_repetition(p):
-	'''repetition 	: repetition TIMES 
-				  	| repetition PLUS 
-					| repetition OPT  
-					| repetition LCPAR NUM RCPAR
-					| repetition LCPAR COMMA NUM RCPAR
-					| repetition LCPAR NUM COMMA RCPAR
-					| repetition LCPAR NUM COMMA NUM RCPAR
+	'''repetition 	: subexpr TIMES 
+				  	| subexpr PLUS 
+					| subexpr OPT  
+					| subexpr LCPAR NUM RCPAR
+					| subexpr LCPAR COMMA NUM RCPAR
+					| subexpr LCPAR NUM COMMA RCPAR
+					| subexpr LCPAR NUM COMMA NUM RCPAR
 					| subexpr '''
 	#pay attention that even though some constructs are parsed by the grammar
 	#they may be not suitable to run in the accel.
@@ -308,8 +308,9 @@ def to_ir(data=None, no_postfix=False,no_prefix=False,dotast=None):
 	if data[-1] == '$':
 		no_postfix  = True	
 		data  		= data[:-1]
-
-	ast 		= parser.parse(data)
+	from helper import normalize_regex_input
+	tmp = normalize_regex_input(data)
+	ast 		= parser.parse(tmp)
 
 	#by default regex_code accepts a string even if the part matching the regex does not end at the end of the string
 	ast.set_accept_partial(not no_postfix)
@@ -337,3 +338,33 @@ if __name__ == "__main__":
 	dot_file_content 	= ast.dotty_str()
 	with open('test.dot', 'w', encoding="utf-8") as f:
 		f.write(dot_file_content)
+
+	try:
+		data 		= 'r12ax\\1'
+		ast 		= to_ir(data)
+		assert False
+	except Exception as e:
+		pass
+
+	try:
+		data 		= 'r(?P=ciao)'
+		ast 		= to_ir(data)
+		assert False
+	except Exception as e:
+		pass
+	
+	regex_string        = '(([RKX]{2}?)(.)([STX]))'
+	regex_string = normalize_regex_input(regex_string)
+	assert regex_string == '(([RKX]{2})(.)([STX]))'
+
+	regex_string        = '(([RKX]{2,}?)(.)([STX]))'
+	regex_string = normalize_regex_input(regex_string)
+	assert regex_string == '(([RKX]{2,})(.)([STX]))'
+
+	regex_string        = '(([RKX]{,2}?)(.)([STX]))'
+	regex_string = normalize_regex_input(regex_string)
+	assert regex_string == '(([RKX]{,2})(.)([STX]))'
+
+	regex_string        = '(([RKX]{,2})/(.)([STX]))'
+	regex_string = normalize_regex_input(regex_string)
+	assert regex_string == '(([RKX]{,2})/(.)([STX]))'

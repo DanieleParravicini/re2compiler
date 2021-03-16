@@ -24,7 +24,6 @@ def compile(inputfile=None,data=None, o=None,
 			print('read', data)
 	elif data is None:
 		data 	= input('enter the regular expression> ')  
-	
 	ir = frontend.to_ir(data=data, no_postfix=no_postfix, no_prefix=no_prefix, dotast=dotast )
 	if(dotir is not None):
 		with open(dotir, 'w', encoding="utf-8") as f:

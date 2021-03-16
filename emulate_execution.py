@@ -1,3 +1,4 @@
+from re2compiler.golden_model import golden_model_result
 import re2compiler
 import ir_python
 import timeit
@@ -132,7 +133,7 @@ def _run_asap(code, string, debug=False ):
 	res = ir_python.Accepted in cur_res_exec
 	return res,cc
 
-def compile_and_run(regex_string, string, double_check =True, no_prefix=False, no_postfix=False, O1=True, debug=False ):
+def compile_and_run(regex_string, string, double_check =True, no_prefix=False, no_postfix=False, O1=True, debug=False, frontend='pythonre'):
 
 	code	       = _compile(regex_string=regex_string, double_check=double_check, no_prefix=no_prefix,
 						no_postfix=no_postfix, O1=O1, debug=debug)
@@ -146,20 +147,8 @@ def compile_and_run(regex_string, string, double_check =True, no_prefix=False, n
 	
 	#it's possible to require a double check against a golden model (python re)
 	if double_check:
-		import re
-		regex            = re.compile(regex_string)
-		if no_postfix and no_prefix:
-			golden_model_res = not(regex.fullmatch(string, pos=0) is None)
-		elif no_prefix:
-			golden_model_res = not(regex.match(string, pos=0) is None)
-		elif no_postfix:
-			if regex_string[-1] !='$':
-				regex_string += '$'
-				regex            = re.compile(regex_string)
-			
-			golden_model_res = not(regex.search(string) is None)
-		else:
-			golden_model_res = not(regex.search(string) is None)
+		import golden_model
+		golden_model_res = golden_model.get_golden_model_result(regex_string, string, no_prefix=no_prefix, no_postfix=no_postfix,frontend=frontend)
 
 		assert golden_model_res == res, f'Mismatch between golden model {golden_model_res} and regex coprocessor {res}!'
 		if debug:
@@ -167,7 +156,7 @@ def compile_and_run(regex_string, string, double_check =True, no_prefix=False, n
 			
 	return res, cc
 
-def compile_and_run_asap(regex_string, string, double_check =True, no_prefix=False, no_postfix=False, O1=True, debug=False ):
+def compile_and_run_asap(regex_string, string, double_check =True, no_prefix=False, no_postfix=False, O1=True, debug=False, frontend='pythonre' ):
 
 	code	       = _compile(regex_string=regex_string, double_check=double_check, no_prefix=no_prefix,
 						no_postfix=no_postfix, O1=O1, debug=debug)
@@ -181,20 +170,8 @@ def compile_and_run_asap(regex_string, string, double_check =True, no_prefix=Fal
 	
 	#it's possible to require a double check against a golden model (python re)
 	if double_check:
-		import re
-		regex            = re.compile(regex_string)
-		if no_postfix and no_prefix:
-			golden_model_res = not(regex.fullmatch(string, pos=0) is None)
-		elif no_prefix:
-			golden_model_res = not(regex.match(string, pos=0) is None)
-		elif no_postfix:
-			if regex_string[-1] !='$':
-				regex_string += '$'
-				regex            = re.compile(regex_string)
-			
-			golden_model_res = not(regex.search(string) is None)
-		else:
-			golden_model_res = not(regex.search(string) is None)
+		import golden_model
+		golden_model_res = golden_model.get_golden_model_result(regex_string, string, no_prefix=no_prefix, no_postfix=no_postfix,frontend=frontend)
 
 		assert golden_model_res == res, f'Mismatch between golden model {golden_model_res} and regex coprocessor {res}!'
 		if debug:

@@ -1,11 +1,9 @@
-
-
 import ir
 import itertools
 import pprint
 import traceback
 from helper import reverse
-import emulate_execution as emu
+
 
 def pretty_printer(dictionary):
 	pprint.PrettyPrinter(indent=4).pprint(dictionary)
@@ -581,6 +579,7 @@ if __name__ == "__main__":
 		"MYKMYFLKDQKFSLSGTIRINDKTQSEYGSVWCPGLSITGLHHDAIDHNMFEEMETEIIEYLGPWVQAEYRRIKG"
 	]
 
+	import emulate_execution as emu
 	for r in REs:
 		for i in inputs:
 			try:
