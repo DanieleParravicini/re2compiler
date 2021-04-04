@@ -166,12 +166,18 @@ def get_equivalence_classes(nodes):
 		yield equiv
 		i+=1
 
-def enhance_splits(start_node, debug=False):
+def enhance_splits(start_node, debug=True):
 	split_groups, father= get_split_groups(start_node)
 	#collect split
 	#now we can manipulate the code so that splits are arranged in a balanced tree
 	count = 0
-
+	if debug:
+		with open('debug'+str(count)+'.dot', 'w', encoding="utf-8") as f:
+			f.write('digraph{\n')
+			start_node.navigate(save_dotty(f))
+			f.write('\n}')
+	count += 1
+			
 	for split_root, group in split_groups.items():
 		#ignore non-optimizable splits i.e. splits groups that contain only a split
 		if len(group) == 1:
@@ -205,6 +211,8 @@ def enhance_splits(start_node, debug=False):
 				start_node.navigate(save_dotty(f))
 				f.write('\n}')
 		count+=1
+		
+		split_groups, father = get_split_groups(start_node)
 	return start_node
 
 def merge_redundant_parallel(start_node, debug=False):
@@ -296,10 +304,7 @@ def merge_redundant_parallel(start_node, debug=False):
 
 def merge(equiv,father, debug=False):
 	an_equiv = equiv[0]
-	
-	def simplify_code_placement(x, father):
-		
-		return x
+
 	#Is there any equivalent instruction?
 	#instructions with more than a child (Splits) are ignored
 		
@@ -316,13 +321,12 @@ def merge(equiv,father, debug=False):
 			# just one other instruction (already checked. recheck to be sure)
 			assert len(list(filter(lambda x: len(x.children)>1, equiv))) ==0
 			continuations = list(map(lambda x: x.children[0],   equiv))
-			#disconnect from split leaves their children
+			#disconnect from split the leaves of the tree (i.e. their children)
 			# remember: for the moment we do not target multifather
 			for f, c in zip(equiv, continuations):
 				f.children.remove(c)
 				father[c].remove(f)
 
-			continuations = list(map(lambda x: simplify_code_placement(x,father),   continuations))
 			#create a tree of instructions
 			tree 		  = create_a_balanced_tree_of_splits(continuations,father)
 			an_equiv.append(tree)

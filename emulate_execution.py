@@ -1,9 +1,9 @@
-from re2compiler.golden_model import golden_model_result
 import re2compiler
 import ir_python
 import timeit
 import time
 from   itertools import chain
+from   golden_model import get_golden_model_result
 
 
 def peek_up_to_n(generator, n):

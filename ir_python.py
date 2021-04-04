@@ -150,10 +150,7 @@ class NotMatch(PythonInstr):
 class Match_any(PythonInstr):
 	def __init__(self, pc, *children):
 		super().__init__(pc, *children)
-	
-	def execute(self, string, cur_char_index ):
-		return [self.children[0]]
-		
+			
 	def dotty_repr(self):
 		return f"{id(self)} [label =\"{self.pc} : \\.\" color=\"black\" fillcolor=\"#ffa822\" style=\"filled\"]\n"
 
